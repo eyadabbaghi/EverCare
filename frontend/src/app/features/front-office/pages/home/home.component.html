@@ -1,0 +1,189 @@
+<div class="min-h-screen bg-gradient-to-br from-[#FAF8FC] to-[#F3E8FF]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Hero Section -->
+    <div class="grid lg:grid-cols-2 gap-12 items-center mb-16">
+      <div class="space-y-6">
+        <div class="inline-block">
+          <span class="bg-[#F3E8FF] text-[#7C3AED] px-4 py-2 rounded-full text-sm font-medium">
+            Welcome back, EverCare User!
+          </span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold text-[#2D1B4E] leading-tight">
+          Your Complete Care Platform
+        </h1>
+        <p class="text-lg text-[#6B5B8C]">
+          EverCare brings together everything you need for comprehensive elderly care -
+          from daily wellness tracking to emergency alerts, all in one warm and intuitive platform.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <button
+            appButton
+            class="bg-[#7C3AED] hover:bg-[#6D28D9]"
+            (click)="startJourney()"
+          >
+            Get Started
+            <span class="ml-2">→</span>
+          </button>
+          <button
+            appButton
+            variant="outline"
+            class="border-[#C4B5FD] hover:bg-[#F3E8FF]"
+            routerLink="/profile"
+          >
+            View Profile
+          </button>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="absolute inset-0 bg-gradient-to-br from-[#7C3AED] to-[#C4B5FD] rounded-3xl transform rotate-3 opacity-20"></div>
+        <img
+          src="https://images.unsplash.com/photo-1764006145420-df3006edf060?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbGRlcmx5JTIwY2FyZSUyMGNhcmVnaXZlciUyMGhlbHBpbmd8ZW58MXx8fHwxNzY5OTc4MDcwfDA&ixlib=rb-4.1.0&q=80&w=1080"
+          alt="Elderly care"
+          class="relative rounded-3xl shadow-2xl w-full h-[400px] object-cover"
+        />
+      </div>
+    </div>
+
+    <!-- Main Modules -->
+    <div class="mb-16">
+      <h2 class="text-3xl font-bold text-[#2D1B4E] mb-8 text-center">
+        Explore Our Modules
+      </h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div
+          *ngFor="let module of modules"
+          class="group cursor-pointer hover:shadow-xl transition-all duration-300 border border-[#C4B5FD] rounded-2xl overflow-hidden bg-white"
+          (click)="navigate(module)"
+        >
+          <div class="p-6">
+            <div class="flex items-start space-x-4">
+              <div
+                class="rounded-2xl p-4 group-hover:scale-110 transition-transform"
+                [ngClass]="module.color"
+              >
+                <span class="w-6 h-6 text-white block text-center">
+                  {{ module.icon }}
+                </span>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-xl font-semibold text-[#2D1B4E] mb-2 group-hover:text-[#7C3AED] transition-colors">
+                  {{ module.title }}
+                </h3>
+                <p class="text-[#6B5B8C] mb-4">
+                  {{ module.description }}
+                </p>
+                <button
+                  appButton
+                  variant="ghost"
+                  size="sm"
+                  class="text-[#7C3AED] hover:bg-[#F3E8FF] p-0"
+                >
+                  Learn more
+                  <span class="ml-2">→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="mb-16">
+      <h2 class="text-3xl font-bold text-[#2D1B4E] mb-8 text-center">
+        Why Choose EverCare?
+      </h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div
+          *ngFor="let feature of features; index as i"
+          class="border border-[#C4B5FD] rounded-2xl bg-white hover:shadow-lg transition-shadow"
+        >
+          <div class="p-6 text-center">
+            <div class="bg-gradient-to-br from-[#7C3AED] to-[#C4B5FD] rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <span class="w-8 h-8 text-white text-2xl">
+                {{ feature.icon }}
+              </span>
+            </div>
+            <h3 class="font-semibold text-[#2D1B4E] mb-2">
+              {{ feature.title }}
+            </h3>
+            <p class="text-sm text-[#6B5B8C]">
+              {{ feature.description }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Gallery Section -->
+    <div class="mb-16">
+      <h2 class="text-3xl font-bold text-[#2D1B4E] mb-8 text-center">
+        Caring with Compassion
+      </h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="relative rounded-2xl overflow-hidden shadow-lg group">
+          <img
+            src="https://images.unsplash.com/photo-1758686253896-e6c76b6edf060?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzZW5pb3IlMjB3b21hbiUyMGhhcHB5JTIwc21pbGluZ3xlbnwxfHx8fDE3Njk5NzgwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080"
+            alt="Happy senior"
+            class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#2D1B4E] via-transparent to-transparent opacity-60"></div>
+          <div class="absolute bottom-4 left-4 text-white">
+            <h3 class="font-semibold">Happy &amp; Healthy</h3>
+            <p class="text-sm">Living life to the fullest</p>
+          </div>
+        </div>
+        <div class="relative rounded-2xl overflow-hidden shadow-lg group">
+          <img
+            src="https://images.unsplash.com/photo-1764727291644-5dcb0b1a0375?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwYXBwb2ludG1lbnQlMjBoZWFsdGhjYXJlfGVufDF8fHx8MTc2OTk3ODA3Mnww&ixlib=rb-4.1.0&q=80&w=1080"
+            alt="Medical care"
+            class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#2D1B4E] via-transparent to-transparent opacity-60"></div>
+          <div class="absolute bottom-4 left-4 text-white">
+            <h3 class="font-semibold">Professional Care</h3>
+            <p class="text-sm">Expert medical support</p>
+          </div>
+        </div>
+        <div class="relative rounded-2xl overflow-hidden shadow-lg group">
+          <img
+            src="https://images.unsplash.com/photo-1758686254056-6cd980b9aaee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYW1pbHklMjBjYXJlJTIwdG9nZXRoZXIlMjBlbGRlcmx5fGVufDF8fHx8MTc2OTk3ODA3MXww&ixlib=rb-4.1.0&q=80&w=1080"
+            alt="Family care"
+            class="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#2D1B4E] via-transparent to-transparent opacity-60"></div>
+          <div class="absolute bottom-4 left-4 text-white">
+            <h3 class="font-semibold">Family Together</h3>
+            <p class="text-sm">Connected care network</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="bg-gradient-to-br from-[#7C3AED] to-[#A78BFA] border-none text-white rounded-3xl">
+      <div class="p-12 text-center">
+        <span class="inline-block mb-6">
+          <span class="inline-flex items-center justify-center rounded-full bg-white/10 p-4">
+            ❤️
+          </span>
+        </span>
+        <h2 class="text-3xl font-bold mb-4">
+          Ready to Get Started?
+        </h2>
+        <p class="text-lg mb-8 opacity-90">
+          Join thousands of families who trust EverCare for their loved ones' wellbeing
+        </p>
+        <button
+          appButton
+          class="bg-white text-[#7C3AED] hover:bg-[#F3E8FF]"
+          (click)="startJourney()"
+        >
+          Start Your Journey
+          <span class="ml-2">→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
