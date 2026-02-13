@@ -20,6 +20,7 @@ import { LucideAngularModule, Heart, Mail, Lock, User, Chrome } from 'lucide-ang
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
 import {ReactiveFormsModule} from '@angular/forms';
+import {RouterModule} from '@angular/router';
 @NgModule({
     declarations: [
         AppComponent,
@@ -51,7 +52,8 @@ import {ReactiveFormsModule} from '@angular/forms';
       progressBar: true,
       closeButton: true
     }),
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    RouterModule
 
   ],
   providers: [
