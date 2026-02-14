@@ -16,11 +16,11 @@
         <!-- Avatar with dropdown -->
         <div class="relative">
           <div class="w-32 h-32 rounded-full bg-[#C4B5FD] flex items-center justify-center text-3xl text-[#7C3AED] overflow-hidden">
-            <ng-container *ngIf="user?.profilePicture; else initials">
-              <img [src]="user?.profilePicture" alt="Profile" class="w-full h-full object-cover">
+              <ng-container *ngIf="user.profilePicture; else initials">
+                <img [src]="user.profilePicture" alt="Profile" class="w-full h-full object-cover">
             </ng-container>
             <ng-template #initials>
-              <span>{{ getInitials(user?.name) }}</span>
+              <span>{{ getInitials(user.name) }}</span>
             </ng-template>
           </div>
 
@@ -46,7 +46,7 @@
                 Upload Picture
               </button>
               <button
-                *ngIf="user?.profilePicture"
+                *ngIf="user.profilePicture"
                 type="button"
                 class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center"
                 (click)="removePicture()"
