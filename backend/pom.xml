@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
 
-    <groupId>com.yourteam</groupId>
+    <groupId>com.Brainiacs</groupId>
     <artifactId>microservices-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -25,9 +25,11 @@
     <!-- MUST match your folder names exactly -->
     <modules>
         <module>appointment-service</module>
-        <!-- Comment these out until you actually create the folders -->
-        <!-- <module>gateway-service</module> -->
-        <!-- <module>auth-service</module> -->
+        <module>Dailyme-service</module>
+        <module>Eureka-service</module>
+        <module>ApiGateway</module>
+
+
     </modules>
 
     <dependencyManagement>
@@ -48,6 +50,11 @@
             <artifactId>lombok</artifactId>
             <version>1.18.34</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
