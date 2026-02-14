@@ -26,6 +26,7 @@ import { WelcomePopupComponent } from './ui/welcome-popup/welcome-popup.componen
 import { AlzheimersAssessmentComponent } from './ui/alzheimers-assessment/alzheimers-assessment.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { LucideAngularModule } from 'lucide-angular';
+import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
 
 @NgModule({
   declarations: [
@@ -50,6 +51,7 @@ import { LucideAngularModule } from 'lucide-angular';
     WelcomePopupComponent,
     AlzheimersAssessmentComponent,
     ProfileComponent,
+    NewUserFlowComponent,
   ],
   imports: [
     CommonModule,

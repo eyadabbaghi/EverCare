@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { AuthService, User } from '../../pages/login/auth.service'; // adjust path if needed
 
 interface NavItem {
   id: string;
@@ -22,7 +24,7 @@ interface Notification {
   templateUrl: './navigation.component.html',
   styleUrls: ['./navigation.component.css'],
 })
-export class NavigationComponent {
+export class NavigationComponent implements OnInit, OnDestroy {
   navItems: NavItem[] = [
     { id: 'home', label: 'Home', route: '/' },
     { id: 'activities', label: 'Activities', route: '/activities' },
@@ -31,12 +33,8 @@ export class NavigationComponent {
     { id: 'alerts', label: 'Alerts', route: '/alerts' },
   ];
 
-  // Simple mock user until real auth is wired
-  user = {
-    name: 'EverCare User',
-    email: 'user@example.com',
-    role: 'caregiver',
-  };
+  user: User | null = null;
+  private userSub!: Subscription;
 
   isMobileMenuOpen = false;
   notificationsOpen = false;
@@ -70,7 +68,17 @@ export class NavigationComponent {
     },
   ];
 
-  constructor(private readonly router: Router) {}
+  constructor(private readonly router: Router, private authService: AuthService) {}
+
+  ngOnInit(): void {
+    this.userSub = this.authService.currentUser$.subscribe((user: User | null) => {
+      this.user = user;
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.userSub) this.userSub.unsubscribe();
+  }
 
   get unreadCount(): number {
     return this.notifications.filter((n) => !n.read).length;
@@ -109,25 +117,17 @@ export class NavigationComponent {
 
   handleNotificationClick(notification: Notification): void {
     this.markAsRead(notification.id);
-    if (notification.type === 'alert') {
-      this.navigate('/alerts');
-    } else if (notification.type === 'appointment') {
-      this.navigate('/appointments');
-    }
+    if (notification.type === 'alert') this.navigate('/alerts');
+    else if (notification.type === 'appointment') this.navigate('/appointments');
   }
 
   getSeverityClasses(severity?: string): string {
     switch (severity) {
-      case 'CRITICAL':
-        return 'bg-[#C06C84] text-white';
-      case 'HIGH':
-        return 'bg-[#B39DDB] text-white';
-      case 'MEDIUM':
-        return 'bg-[#DCCEF9] text-[#7C3AED]';
-      case 'LOW':
-        return 'bg-[#A8E6CF] text-[#22c55e]';
-      default:
-        return '';
+      case 'CRITICAL': return 'bg-[#C06C84] text-white';
+      case 'HIGH': return 'bg-[#B39DDB] text-white';
+      case 'MEDIUM': return 'bg-[#DCCEF9] text-[#7C3AED]';
+      case 'LOW': return 'bg-[#A8E6CF] text-[#22c55e]';
+      default: return '';
     }
   }
 
@@ -141,14 +141,24 @@ export class NavigationComponent {
   }
 
   logout(): void {
-    // TODO: wire real logout
+    this.authService.logout();
     this.profileOpen = false;
-    this.router.navigateByUrl('/login');
   }
 
   goToProfile(): void {
     this.profileOpen = false;
     this.navigate('/profile');
   }
-}
 
+  /** =======================
+   *  Close dropdown when clicking outside
+   *  ======================= */
+  @HostListener('document:click', ['$event.target'])
+  onClickOutside(target: HTMLElement) {
+    const dropdown = document.getElementById('profile-dropdown');
+    const button = document.getElementById('profile-button');
+    if (dropdown && button && !dropdown.contains(target) && !button.contains(target)) {
+      this.profileOpen = false;
+    }
+  }
+}

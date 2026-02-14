@@ -7,14 +7,14 @@ import { Component, EventEmitter, Output } from '@angular/core';
 })
 export class WelcomePopupComponent {
   @Output() completed = new EventEmitter<void>();
-  @Output() skipped = new EventEmitter<void>();
+@Output() skipped = new EventEmitter<void>();
 
-  finishTour(): void {
-    this.completed.emit();
-  }
+finishTour(): void {
+  this.completed.emit();
+}
 
-  skipTour(): void {
-    this.skipped.emit();
-  }
+skipTour(): void {
+  this.skipped.emit();
+}
 }
 

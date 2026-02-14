@@ -27,6 +27,7 @@
         <module>appointment-service</module>
         <module>Activities</module>
         <module>Alerts</module>
+        <module>User</module>
         <!-- Comment these out until you actually create the folders -->
         <!-- <module>gateway-service</module> -->
         <!-- <module>auth-service</module> -->
@@ -57,6 +58,20 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.32</version> <!-- Latest stable -->
+            <scope>provided</scope>
+        </dependency>
+
+
     </dependencies>
 
     <build>

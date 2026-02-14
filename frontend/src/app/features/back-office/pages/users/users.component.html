@@ -21,8 +21,13 @@
       </button>
     </header>
 
+    <!-- Loading indicator -->
+    <div *ngIf="loading" class="text-center py-4">
+      <span class="text-[#6B5B8C]">Loading users...</span>
+    </div>
+
     <!-- Users table -->
-    <section class="rounded-2xl bg-white border border-[#E5D9FF] p-5 space-y-4">
+    <section *ngIf="!loading" class="rounded-2xl bg-white border border-[#E5D9FF] p-5 space-y-4">
       <div class="flex items-center justify-between text-sm">
         <h2 class="text-sm font-semibold text-[#2D1B4E]">
           Users
@@ -39,7 +44,7 @@
               <th class="px-4 py-2 text-left font-medium">Name</th>
               <th class="px-4 py-2 text-left font-medium">Email</th>
               <th class="px-4 py-2 text-left font-medium">Role</th>
-              <th class="px-4 py-2 text-left font-medium">Status</th>
+              <th class="px-4 py-2 text-left font-medium">Verified</th>
               <th class="px-4 py-2 text-right font-medium">Actions</th>
             </tr>
           </thead>
@@ -51,16 +56,21 @@
               <td class="px-4 py-2 align-middle">
                 <div class="flex items-center gap-2">
                   <div
-                    class="w-8 h-8 rounded-full bg-[#C4B5FD] flex items-center justify-center text-xs font-semibold text-[#7C3AED]"
+                    class="w-8 h-8 rounded-full bg-[#C4B5FD] flex items-center justify-center text-xs font-semibold text-[#7C3AED] overflow-hidden"
                   >
-                    {{ getInitials(user.name) }}
+                    <ng-container *ngIf="user.profilePicture; else initials">
+                      <img [src]="user.profilePicture" alt="Profile" class="w-full h-full object-cover">
+                    </ng-container>
+                    <ng-template #initials>
+                      <span>{{ getInitials(user.name) }}</span>
+                    </ng-template>
                   </div>
                   <div class="flex flex-col">
                     <span class="font-medium text-[#111827]">
                       {{ user.name || 'Unnamed user' }}
                     </span>
                     <span class="text-[11px] text-[#6B5B8C]">
-                      {{ user.id }}
+                      {{ user.userId }}
                     </span>
                   </div>
                 </div>
@@ -79,22 +89,16 @@
                 </select>
               </td>
               <td class="px-4 py-2 align-middle">
-                <button
-                  type="button"
+                <span
                   class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                  [ngClass]="
-                    user.status === 'active'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-slate-50 text-slate-600 border border-slate-200'
-                  "
-                  (click)="toggleStatus(user)"
+                  [ngClass]="user.isVerified ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-50 text-slate-600 border border-slate-200'"
                 >
                   <span
                     class="w-2 h-2 rounded-full mr-2"
-                    [ngClass]="user.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'"
+                    [ngClass]="user.isVerified ? 'bg-emerald-500' : 'bg-slate-400'"
                   ></span>
-                  {{ user.status === 'active' ? 'Active' : 'Disabled' }}
-                </button>
+                  {{ user.isVerified ? 'Verified' : 'Not verified' }}
+                </span>
               </td>
               <td class="px-4 py-2 align-middle text-right">
                 <button
@@ -158,6 +162,7 @@
             name="name"
             class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
             placeholder="Jane Doe"
+            [disabled]="!isCreating && !editingUser"
           />
         </label>
 
@@ -169,6 +174,7 @@
             name="email"
             class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
             placeholder="jane.doe@example.com"
+            [disabled]="!isCreating && !editingUser"
           />
         </label>
 
@@ -184,30 +190,6 @@
             </option>
           </select>
         </label>
-
-        <div class="space-y-1">
-          <span class="text-xs font-medium text-[#4B5563]">Status</span>
-          <div class="flex items-center gap-3 mt-1">
-            <label class="inline-flex items-center gap-2 text-xs text-[#374151]">
-              <input
-                type="radio"
-                name="status"
-                [value]="'active'"
-                [(ngModel)]="newUser.status"
-              />
-              Active
-            </label>
-            <label class="inline-flex items-center gap-2 text-xs text-[#374151]">
-              <input
-                type="radio"
-                name="status"
-                [value]="'disabled'"
-                [(ngModel)]="newUser.status"
-              />
-              Disabled
-            </label>
-          </div>
-        </div>
       </div>
 
       <div class="flex items-center justify-end gap-2 pt-2">
@@ -230,4 +212,3 @@
     </section>
   </div>
 </div>
-

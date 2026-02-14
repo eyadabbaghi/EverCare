@@ -14,26 +14,57 @@
     <div class="border border-[#C4B5FD] rounded-2xl bg-white profile-card">
       <div class="p-6 flex flex-col md:flex-row items-center md:items-start gap-6">
         <div class="relative">
-          <div
-            class="w-28 h-28 rounded-full bg-[#C4B5FD] flex items-center justify-center text-3xl text-[#7C3AED]"
-          >
-            <span *ngIf="!adminUser.avatar">
-              {{ getInitials(adminUser.name) }}
-            </span>
-            <img
-              *ngIf="adminUser.avatar"
-              [src]="adminUser.avatar"
-              [alt]="adminUser.name"
-              class="w-full h-full object-cover rounded-full"
-            />
-          </div>
-          <button
-            type="button"
-            class="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-lg hover:bg-[#6D28D9]"
-          >
-            📷
-          </button>
-        </div>
+  <div class="w-28 h-28 rounded-full bg-[#C4B5FD] flex items-center justify-center text-3xl text-[#7C3AED] overflow-hidden">
+    <ng-container *ngIf="user?.profilePicture; else initials">
+      <img [src]="user?.profilePicture" alt="Profile" class="w-full h-full object-cover">
+    </ng-container>
+    <ng-template #initials>
+      <span>{{ getInitials(user?.name) }}</span>
+    </ng-template>
+  </div>
+
+  <!-- Camera icon with dropdown -->
+  <div class="absolute bottom-0 right-0">
+    <button
+      type="button"
+      class="w-9 h-9 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-lg hover:bg-[#6D28D9]"
+      (click)="togglePictureMenu()"
+      [disabled]="isLoading"
+    >
+      📷
+    </button>
+
+    <!-- Dropdown menu -->
+    <div *ngIf="showPictureMenu" class="absolute right-0 bottom-full mb-2 w-48 bg-white border border-[#E5E7EB] rounded-xl shadow-lg overflow-hidden z-50">
+      <button
+        type="button"
+        class="w-full text-left px-4 py-2.5 text-sm text-[#2D1B4E] hover:bg-[#F3E8FF] flex items-center"
+        (click)="triggerFileInput()"
+      >
+        <span class="mr-2">📷</span>
+        Upload Picture
+      </button>
+      <button
+        *ngIf="user?.profilePicture"
+        type="button"
+        class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center"
+        (click)="removePicture()"
+      >
+        <span class="mr-2">🗑️</span>
+        Remove Picture
+      </button>
+    </div>
+  </div>
+
+  <!-- Hidden file input -->
+  <input
+    type="file"
+    id="profile-picture-input"
+    accept="image/*"
+    class="hidden"
+    (change)="onFileSelected($event)"
+  />
+</div>
 
         <div class="flex-1 text-center md:text-left space-y-2">
           <h2 class="text-2xl font-bold text-[#2D1B4E]">

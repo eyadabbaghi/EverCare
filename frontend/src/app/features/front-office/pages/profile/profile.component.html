@@ -10,27 +10,61 @@
       </p>
     </div>
 
-    <!-- Profile card -->
-    <div class="profile-card border border-[#C4B5FD] rounded-2xl bg-white">
+    <!-- Profile card - only show if user exists -->
+    <div *ngIf="user" class="profile-card border border-[#C4B5FD] rounded-2xl bg-white">
       <div class="p-6 flex flex-col md:flex-row items-center md:items-start gap-6">
+        <!-- Avatar with dropdown -->
         <div class="relative">
-          <div class="w-32 h-32 rounded-full bg-[#C4B5FD] flex items-center justify-center text-3xl text-[#7C3AED]">
-            <span *ngIf="!user.avatar">
-              {{ getInitials(user.name) }}
-            </span>
-            <img
-              *ngIf="user.avatar"
-              [src]="user.avatar"
-              [alt]="user.name"
-              class="w-full h-full object-cover rounded-full"
-            />
+          <div class="w-32 h-32 rounded-full bg-[#C4B5FD] flex items-center justify-center text-3xl text-[#7C3AED] overflow-hidden">
+            <ng-container *ngIf="user?.profilePicture; else initials">
+              <img [src]="user?.profilePicture" alt="Profile" class="w-full h-full object-cover">
+            </ng-container>
+            <ng-template #initials>
+              <span>{{ getInitials(user?.name) }}</span>
+            </ng-template>
           </div>
-          <button
-            type="button"
-            class="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-lg hover:bg-[#6D28D9]"
-          >
-            📷
-          </button>
+
+          <!-- Camera icon with dropdown -->
+          <div class="absolute bottom-0 right-0">
+            <button
+              type="button"
+              class="w-9 h-9 rounded-full bg-[#7C3AED] text-white flex items-center justify-center shadow-lg hover:bg-[#6D28D9]"
+              (click)="togglePictureMenu()"
+              [disabled]="isLoading"
+            >
+              📷
+            </button>
+
+            <!-- Dropdown menu -->
+            <div *ngIf="showPictureMenu" class="absolute right-0 bottom-full mb-2 w-48 bg-white border border-[#E5E7EB] rounded-xl shadow-lg overflow-hidden z-50">
+              <button
+                type="button"
+                class="w-full text-left px-4 py-2.5 text-sm text-[#2D1B4E] hover:bg-[#F3E8FF] flex items-center"
+                (click)="triggerFileInput()"
+              >
+                <span class="mr-2">📷</span>
+                Upload Picture
+              </button>
+              <button
+                *ngIf="user?.profilePicture"
+                type="button"
+                class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                (click)="removePicture()"
+              >
+                <span class="mr-2">🗑️</span>
+                Remove Picture
+              </button>
+            </div>
+          </div>
+
+          <!-- Hidden file input -->
+          <input
+            type="file"
+            id="profile-picture-input"
+            accept="image/*"
+            class="hidden"
+            (change)="onFileSelected($event)"
+          />
         </div>
 
         <div class="flex-1 text-center md:text-left space-y-2">
@@ -94,125 +128,180 @@
         </button>
       </div>
 
-      <!-- Personal information tab -->
+      <!-- Personal information tab (now with reactive form) -->
       <div
         *ngIf="activeTab === 'personal'"
         class="profile-section-card border border-[#C4B5FD] rounded-2xl bg-white"
       >
-        <div class="border-b border-[#E5E7EB] px-6 py-4 flex items-center justify-between">
-          <div>
-            <h3 class="text-base font-semibold text-[#2D1B4E]">
-              Personal information
-            </h3>
-            <p class="text-sm text-[#6B5B8C]">
-              Update your personal details
-            </p>
+        <form [formGroup]="personalForm">
+          <div class="border-b border-[#E5E7EB] px-6 py-4 flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-semibold text-[#2D1B4E]">
+                Personal information
+              </h3>
+              <p class="text-sm text-[#6B5B8C]">
+                Update your personal details
+              </p>
+            </div>
+            <button
+              type="button"
+              class="px-4 py-2 rounded-full bg-[#7C3AED] text-sm text-white font-medium hover:bg-[#6D28D9]"
+              (click)="toggleEdit()"
+            >
+              {{ isEditing ? 'Save changes' : 'Edit profile' }}
+            </button>
           </div>
-          <button
-            type="button"
-            class="px-4 py-2 rounded-full bg-[#7C3AED] text-sm text-white font-medium hover:bg-[#6D28D9]"
-            (click)="toggleEdit()"
-          >
-            {{ isEditing ? 'Save changes' : 'Edit profile' }}
-          </button>
-        </div>
 
-        <div class="p-6 space-y-4">
-          <div class="grid md:grid-cols-2 gap-4">
+          <div class="p-6 space-y-4">
+            <div class="grid md:grid-cols-2 gap-4">
+              <!-- Name -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-[#374151]" for="name">
+                  Full name <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <span class="absolute left-3 top-2.5 text-[#6B5B8C]">👤</span>
+                  <input
+                    id="name"
+                    type="text"
+                    formControlName="name"
+                    class="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                    [class.border-red-500]="isInvalid('name')"
+                    [disabled]="!isEditing"
+                  />
+                </div>
+                <div *ngIf="isInvalid('name')" class="text-red-500 text-xs">
+                  Name is required.
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-[#374151]" for="email">
+                  Email address <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <span class="absolute left-3 top-2.5 text-[#6B5B8C]">✉️</span>
+                  <input
+                    id="email"
+                    type="email"
+                    formControlName="email"
+                    class="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                    [class.border-red-500]="isInvalid('email')"
+                    [disabled]="!isEditing"
+                  />
+                </div>
+                <div *ngIf="isInvalid('email')" class="text-red-500 text-xs">
+                  <span *ngIf="personalForm.get('email')?.errors?.['required']">Email is required.</span>
+                  <span *ngIf="personalForm.get('email')?.errors?.['email']">Please enter a valid email address.</span>
+                </div>
+              </div>
+
+              <!-- Phone with country code -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-[#374151]" for="phone">
+                  Phone number <span class="text-red-500">*</span>
+                </label>
+                <div class="flex space-x-2">
+                  <select
+                    [(ngModel)]="phoneCountryCode"
+                    [ngModelOptions]="{standalone: true}"
+                    class="w-24 px-2 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] bg-white"
+                    [disabled]="!isEditing"
+                  >
+                    <option *ngFor="let c of countries" [value]="c.code">
+                      {{ c.flag }} {{ c.code }}
+                    </option>
+                  </select>
+                  <input
+                    id="phone"
+                    type="tel"
+                    formControlName="phone"
+                    class="flex-1 pl-3 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                    [class.border-red-500]="isInvalid('phone')"
+                    [disabled]="!isEditing"
+                    placeholder="123456789"
+                  />
+                </div>
+                <div *ngIf="isInvalid('phone')" class="text-red-500 text-xs">
+                  <span *ngIf="personalForm.get('phone')?.errors?.['required']">Phone number is required.</span>
+                  <span *ngIf="personalForm.get('phone')?.errors?.['invalidPhone']">Phone number can only contain digits, spaces, +, -, and parentheses.</span>
+                </div>
+              </div>
+
+              <!-- Date of birth -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-[#374151]" for="dob">
+                  Date of birth <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                  <span class="absolute left-3 top-2.5 text-[#6B5B8C]">📅</span>
+                  <input
+                    id="dob"
+                    type="date"
+                    formControlName="dateOfBirth"
+                    class="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                    [class.border-red-500]="isInvalid('dateOfBirth')"
+                    [disabled]="!isEditing"
+                  />
+                </div>
+                <div *ngIf="isInvalid('dateOfBirth')" class="text-red-500 text-xs">
+                  <span *ngIf="personalForm.get('dateOfBirth')?.errors?.['required']">Date of birth is required.</span>
+                  <span *ngIf="personalForm.get('dateOfBirth')?.errors?.['futureDate']">Date must be in the past.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Address -->
             <div class="space-y-2">
-              <label class="text-sm font-medium text-[#374151]" for="name">
-                Full name
+              <label class="text-sm font-medium text-[#374151]" for="address">
+                Address
               </label>
               <div class="relative">
-                <span class="absolute left-3 top-2.5 text-[#6B5B8C]">👤</span>
+                <span class="absolute left-3 top-2.5 text-[#6B5B8C]">📍</span>
                 <input
-                  id="name"
+                  id="address"
                   type="text"
+                  formControlName="address"
                   class="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
                   [disabled]="!isEditing"
-                  [(ngModel)]="profileData.name"
                 />
               </div>
             </div>
 
+            <!-- Emergency contact with country code -->
             <div class="space-y-2">
-              <label class="text-sm font-medium text-[#374151]" for="email">
-                Email address
+              <label class="text-sm font-medium text-[#374151]" for="emergency">
+                Emergency contact <span class="text-red-500">*</span>
               </label>
-              <div class="relative">
-                <span class="absolute left-3 top-2.5 text-[#6B5B8C]">✉️</span>
-                <input
-                  id="email"
-                  type="email"
-                  class="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+              <div class="flex space-x-2">
+                <select
+                  [(ngModel)]="emergencyCountryCode"
+                  [ngModelOptions]="{standalone: true}"
+                  class="w-24 px-2 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] bg-white"
                   [disabled]="!isEditing"
-                  [(ngModel)]="profileData.email"
-                />
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-[#374151]" for="phone">
-                Phone number
-              </label>
-              <div class="relative">
-                <span class="absolute left-3 top-2.5 text-[#6B5B8C]">📞</span>
+                >
+                  <option *ngFor="let c of countries" [value]="c.code">
+                    {{ c.flag }} {{ c.code }}
+                  </option>
+                </select>
                 <input
-                  id="phone"
+                  id="emergency"
                   type="tel"
-                  class="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                  formControlName="emergencyContact"
+                  class="flex-1 pl-3 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                  [class.border-red-500]="isInvalid('emergencyContact')"
                   [disabled]="!isEditing"
-                  [(ngModel)]="profileData.phone"
+                  placeholder="123456789"
                 />
               </div>
-            </div>
-
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-[#374151]" for="dob">
-                Date of birth
-              </label>
-              <div class="relative">
-                <span class="absolute left-3 top-2.5 text-[#6B5B8C]">📅</span>
-                <input
-                  id="dob"
-                  type="date"
-                  class="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
-                  [disabled]="!isEditing"
-                  [(ngModel)]="profileData.dateOfBirth"
-                />
+              <div *ngIf="isInvalid('emergencyContact')" class="text-red-500 text-xs">
+                <span *ngIf="personalForm.get('emergencyContact')?.errors?.['required']">Emergency contact is required.</span>
+                <span *ngIf="personalForm.get('emergencyContact')?.errors?.['invalidPhone']">Phone number can only contain digits, spaces, +, -, and parentheses.</span>
               </div>
             </div>
           </div>
-
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-[#374151]" for="address">
-              Address
-            </label>
-            <div class="relative">
-              <span class="absolute left-3 top-2.5 text-[#6B5B8C]">📍</span>
-              <input
-                id="address"
-                type="text"
-                class="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
-                [disabled]="!isEditing"
-                [(ngModel)]="profileData.address"
-              />
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-[#374151]" for="emergency">
-              Emergency contact
-            </label>
-            <input
-              id="emergency"
-              type="text"
-              class="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
-              [disabled]="!isEditing"
-              [(ngModel)]="profileData.emergencyContact"
-            />
-          </div>
-        </div>
+        </form>
       </div>
 
       <!-- Health information tab -->
@@ -393,6 +482,7 @@
             </p>
           </div>
           <div class="p-6 space-y-4">
+            <!-- Change password button -->
             <div class="profile-setting-item flex items-center justify-between p-4 bg-[#F9FAFB] rounded-lg">
               <div>
                 <h4 class="font-medium text-[#2D1B4E]">Change password</h4>
@@ -402,12 +492,48 @@
               </div>
               <button
                 type="button"
-                class="px-3 py-1.5 rounded-full border border-[#C4B5FD] text-xs text-[#2D1B4E]"
+                class="px-3 py-1.5 rounded-full border border-[#C4B5FD] text-xs text-[#2D1B4E] hover:bg-[#F3E8FF]"
+                (click)="toggleChangePassword()"
+                [disabled]="isLoading"
               >
-                Change
+                {{ isChangingPassword ? 'Cancel' : 'Change' }}
               </button>
             </div>
 
+            <!-- Password change form (conditionally shown) -->
+            <div *ngIf="isChangingPassword" class="p-4 bg-white border border-[#E5E7EB] rounded-lg space-y-3">
+              <div>
+                <label class="block text-xs font-medium text-[#374151] mb-1">Current Password</label>
+                <input
+                  type="password"
+                  class="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                  [(ngModel)]="passwordData.currentPassword"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-[#374151] mb-1">New Password</label>
+                <input
+                  type="password"
+                  class="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                  [(ngModel)]="passwordData.newPassword"
+                  placeholder="••••••••"
+                />
+                <p class="text-xs text-[#6B5B8C] mt-1">
+                  Must be at least 8 chars, include uppercase, digit, and special character.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-sm font-medium py-2 rounded-lg"
+                (click)="handleChangePassword()"
+                [disabled]="isLoading"
+              >
+                {{ isLoading ? 'Updating...' : 'Update Password' }}
+              </button>
+            </div>
+
+            <!-- Two-factor authentication (placeholder) -->
             <div class="profile-setting-item flex items-center justify-between p-4 bg-[#F9FAFB] rounded-lg">
               <div>
                 <h4 class="font-medium text-[#2D1B4E]">Two-factor authentication</h4>
@@ -418,11 +544,13 @@
               <button
                 type="button"
                 class="px-3 py-1.5 rounded-full border border-[#C4B5FD] text-xs text-[#2D1B4E]"
+                disabled
               >
                 Enable
               </button>
             </div>
 
+            <!-- Active sessions (placeholder) -->
             <div class="profile-setting-item flex items-center justify-between p-4 bg-[#F9FAFB] rounded-lg">
               <div>
                 <h4 class="font-medium text-[#2D1B4E]">Active sessions</h4>
@@ -433,8 +561,40 @@
               <button
                 type="button"
                 class="px-3 py-1.5 rounded-full border border-[#C4B5FD] text-xs text-[#2D1B4E]"
+                disabled
               >
                 View
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger zone -->
+        <div class="profile-section-card border border-red-200 rounded-2xl bg-white">
+          <div class="border-b border-red-200 px-6 py-4">
+            <h3 class="text-base font-semibold text-red-600 flex items-center space-x-2">
+              <span>⚠️</span>
+              <span>Danger Zone</span>
+            </h3>
+            <p class="text-sm text-[#6B5B8C]">
+              Irreversible actions for your account
+            </p>
+          </div>
+          <div class="p-6">
+            <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+              <div>
+                <h4 class="font-medium text-red-700">Delete account</h4>
+                <p class="text-sm text-red-600">
+                  Permanently delete your account and all associated data
+                </p>
+              </div>
+              <button
+                type="button"
+                class="px-4 py-2 rounded-full bg-red-600 text-white text-sm font-medium hover:bg-red-700"
+                (click)="confirmDeleteAccount()"
+                [disabled]="isLoading"
+              >
+                {{ isLoading ? 'Deleting...' : 'Delete' }}
               </button>
             </div>
           </div>
@@ -443,4 +603,3 @@
     </div>
   </div>
 </div>
-

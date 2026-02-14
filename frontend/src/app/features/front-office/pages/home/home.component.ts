@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { take } from 'rxjs/operators';
+import { AuthService } from '../login/auth.service'; // adjust path if needed
 
 interface HomeModuleCard {
   id: string;
@@ -22,8 +24,9 @@ interface HomeFeature {
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
 })
-export class HomeComponent {
-  // Simplified version of the React HomePage props-based navigation
+export class HomeComponent implements OnInit {
+  showNewUserFlow = false;
+
   readonly modules: HomeModuleCard[] = [
     {
       id: 'daily-me',
@@ -92,7 +95,24 @@ export class HomeComponent {
     },
   ];
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private authService: AuthService
+  ) {}
+
+  ngOnInit(): void {
+    // Check if we should show the new user flow (welcome + assessment)
+    if (this.authService.isAuthenticated() && localStorage.getItem('showWelcomeFlow') === 'true') {
+      this.showNewUserFlow = true;
+    }
+
+    // If the logged-in user is an admin, redirect to the admin dashboard
+    this.authService.currentUser$.pipe(take(1)).subscribe(user => {
+      if (user && user.role === 'ADMIN') {
+        this.router.navigate(['/admin']);
+      }
+    });
+  }
 
   navigate(card: HomeModuleCard): void {
     if (card.primaryRoute) {
@@ -103,5 +123,8 @@ export class HomeComponent {
   startJourney(): void {
     this.router.navigateByUrl('/activities');
   }
-}
 
+  onNewUserFlowFinished(): void {
+    this.showNewUserFlow = false;
+  }
+}

@@ -9,11 +9,13 @@ import { ReportsComponent } from './pages/reports/reports.component';
 import { ProfileComponent } from './pages/profile/profile.component';
 import { ActivitiesAdminComponent } from './pages/activities-admin/activities-admin.component';
 import { ActivityDetailsAdminComponent } from './pages/activity-details-admin/activity-details-admin.component';
+import { AdminGuard } from '../../core/guards/admin.guard';
 
 const routes: Routes = [
   {
     path: 'admin',
     component: BackOfficeLayoutComponent,
+    canActivate: [AdminGuard],
     children: [
       { path: '', component: DashboardComponent },
       { path: 'activities', component: ActivitiesAdminComponent },

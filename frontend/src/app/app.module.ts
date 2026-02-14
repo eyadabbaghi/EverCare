@@ -1,5 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http'; // added HTTP_INTERCEPTORS
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -19,23 +21,25 @@ import { AppointmentsModule } from './features/appointments/appointments.module'
 import { LucideAngularModule, Heart, Mail, Lock, User, Chrome } from 'lucide-angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
-import {ReactiveFormsModule} from '@angular/forms';
+
+// Import the interceptor
+import { AuthInterceptor } from './features/front-office/pages/login/auth.interceptor'; // adjust path if needed
+
 @NgModule({
-    declarations: [
-        AppComponent,
-        BackOfficeLayoutComponent,
-        SidebarComponent,
-        NavbarComponent,
-        FooterComponent,
-        FrontOfficeLayoutComponent,
-        HeaderComponent,
-        HeroComponent,
-
-
-    ],
+  declarations: [
+    AppComponent,
+    BackOfficeLayoutComponent,
+    SidebarComponent,
+    NavbarComponent,
+    FooterComponent,
+    FrontOfficeLayoutComponent,
+    HeaderComponent,
+    HeroComponent,
+  ],
   imports: [
     BrowserModule,
     AppRoutingModule,
+    HttpClientModule,
     CoreModule,
     SharedModule,
     LayoutsModule,
@@ -52,10 +56,10 @@ import {ReactiveFormsModule} from '@angular/forms';
       closeButton: true
     }),
     ReactiveFormsModule
-
   ],
   providers: [
-    provideClientHydration()
+    provideClientHydration(),
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true } // Add this line
   ],
   bootstrap: [AppComponent]
 })

@@ -16,7 +16,6 @@ import { NotificationPanelComponent } from './components/notification-panel/noti
 import { ActivitiesAdminComponent } from './pages/activities-admin/activities-admin.component';
 import { ActivityDetailsAdminComponent } from './pages/activity-details-admin/activity-details-admin.component';
 
-
 @NgModule({
   declarations: [
     DashboardComponent,
