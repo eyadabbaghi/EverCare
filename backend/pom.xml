@@ -28,6 +28,8 @@
         <module>Activities</module>
         <module>Alerts</module>
         <module>User</module>
+        <module>ApiGateway</module>
+        <module>Eureka-service</module>
         <!-- Comment these out until you actually create the folders -->
         <!-- <module>gateway-service</module> -->
         <!-- <module>auth-service</module> -->

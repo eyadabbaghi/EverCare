@@ -31,10 +31,11 @@
 
         <div class="space-y-4">
           <div
-            *ngFor="let activity of pagedActivities"
-            class="cursor-pointer group"
-            (click)="goToDetails(activity)"
-          >
+  *ngFor="let activity of pagedActivities"
+  class="cursor-pointer group"
+  (click)="selectActivity(activity); $event.stopPropagation()"
+  (dblclick)="goToDetails(activity); $event.stopPropagation()"
+>
             <div
               class="border-2 rounded-2xl overflow-hidden transition-all duration-300"
               [ngClass]="
@@ -138,7 +139,7 @@
           </div>
 
           <p
-            *ngIf="activities.length === 0"
+            *ngIf="activitiesWithDetails.length === 0"
             class="text-sm text-[#6B5B8C] text-center border border-dashed border-[#DDD6FE] rounded-xl py-6 bg-white/70"
           >
             No activities yet. Click <span class="font-semibold">New activity</span> to add your first
@@ -147,7 +148,7 @@
 
           <!-- Pagination -->
           <div
-            *ngIf="activities.length > pageSize"
+            *ngIf="activitiesWithDetails.length > pageSize"
             class="flex items-center justify-between pt-2 text-xs text-[#6B5B8C]"
           >
             <div>
@@ -217,7 +218,7 @@
                 <span class="text-xs font-medium text-[#4B5563]">Title</span>
                 <input
                   type="text"
-                  [(ngModel)]="formModel.name"
+                  [(ngModel)]="activityForm.name"
                   name="name"
                   class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
                   placeholder="Morning Breathing Exercise"
@@ -227,7 +228,7 @@
               <label class="space-y-1">
                 <span class="text-xs font-medium text-[#4B5563]">Type</span>
                 <select
-                  [(ngModel)]="formModel.type"
+                  [(ngModel)]="activityForm.type"
                   name="type"
                   class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
                 >
@@ -242,7 +243,7 @@
                 <input
                   type="number"
                   min="1"
-                  [(ngModel)]="formModel.duration"
+                  [(ngModel)]="activityForm.duration"
                   name="duration"
                   class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
                   placeholder="20"
@@ -253,7 +254,7 @@
                 <span class="text-xs font-medium text-[#4B5563]">Scheduled time (optional)</span>
                 <input
                   type="text"
-                  [(ngModel)]="formModel.scheduledTime"
+                  [(ngModel)]="activityForm.scheduledTime"
                   name="scheduledTime"
                   class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
                   placeholder="10:00 AM"
@@ -264,7 +265,7 @@
                 <span class="text-xs font-medium text-[#4B5563]">Image URL</span>
                 <input
                   type="text"
-                  [(ngModel)]="formModel.imageUrl"
+                  [(ngModel)]="activityForm.imageUrl"
                   name="imageUrl"
                   class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
                   placeholder="https://images.unsplash.com/..."
@@ -275,7 +276,7 @@
                 <span class="text-xs font-medium text-[#4B5563]">Short description</span>
                 <textarea
                   rows="3"
-                  [(ngModel)]="formModel.description"
+                  [(ngModel)]="activityForm.description"
                   name="description"
                   class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
                   placeholder="This is what patients will see on the card and details page."
@@ -284,7 +285,7 @@
             </div>
           </div>
 
-          <!-- Configuration card -->
+          <!-- Configuration card (now using detailsForm) -->
           <div class="rounded-2xl bg-white border border-[#E5D9FF] p-5 space-y-4">
             <h3 class="text-sm font-semibold text-[#2D1B4E]">
               Configuration
@@ -294,7 +295,7 @@
               <label class="space-y-1">
                 <span class="text-xs font-medium text-[#4B5563]">Difficulty</span>
                 <select
-                  [(ngModel)]="formModel.difficulty"
+                  [(ngModel)]="detailsForm.difficulty"
                   name="difficulty"
                   class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
                 >
@@ -308,7 +309,7 @@
                 <span class="text-xs font-medium text-[#4B5563]">Frequency</span>
                 <input
                   type="text"
-                  [(ngModel)]="formModel.frequency"
+                  [(ngModel)]="detailsForm.frequency"
                   name="frequency"
                   class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
                   placeholder="Daily, 3 times per week..."
@@ -319,7 +320,7 @@
                 <span class="text-xs font-medium text-[#4B5563]">Supervision</span>
                 <input
                   type="text"
-                  [(ngModel)]="formModel.supervision"
+                  [(ngModel)]="detailsForm.supervision"
                   name="supervision"
                   class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
                   placeholder="Independent, caregiver presence recommended..."
@@ -334,7 +335,7 @@
                     *ngFor="let stage of stages"
                     class="px-3 py-1 rounded-full text-xs border"
                     [ngClass]="
-                      formModel.recommendedStage.includes(stage)
+                      (detailsForm.recommendedStage || []).includes(stage)
                         ? 'bg-[#7C3AED] border-[#7C3AED] text-white'
                         : 'bg-white border-[#E5E7EB] text-[#4B5563]'
                     "
@@ -348,7 +349,7 @@
               <label class="inline-flex items-center gap-2 text-xs text-[#4B5563] sm:col-span-2">
                 <input
                   type="checkbox"
-                  [(ngModel)]="formModel.doctorSuggested"
+                  [(ngModel)]="activityForm.doctorSuggested"
                   name="doctorSuggested"
                   class="rounded border-[#E5E7EB] text-[#7C3AED] focus:ring-[#7C3AED]"
                 />
@@ -357,7 +358,7 @@
             </div>
           </div>
 
-          <!-- Content sections, mirroring details page -->
+          <!-- Content sections (instructions, benefits, precautions) using detailsForm -->
           <div class="rounded-2xl bg-white border border-[#E5D9FF] p-5 space-y-4">
             <h3 class="text-sm font-semibold text-[#2D1B4E]">
               Steps & benefits
@@ -379,7 +380,7 @@
 
                 <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
                   <div
-                    *ngFor="let step of formModel.instructions; let i = index"
+                    *ngFor="let step of detailsForm.instructions || []; let i = index; trackBy: trackByIndex"
                     class="flex items-start gap-2"
                   >
                     <span
@@ -388,12 +389,13 @@
                       {{ i + 1 }}
                     </span>
                     <textarea
-                      rows="2"
-                      [(ngModel)]="formModel.instructions[i]"
-                      [name]="'instruction-' + i"
-                      class="flex-1 rounded-xl border border-[#E5E7EB] px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
-                      placeholder="Describe this step..."
-                    ></textarea>
+  rows="2"
+  [ngModel]="detailsForm.instructions![i]"
+  (ngModelChange)="updateInstruction(i, $event)"
+  [name]="'instruction-' + i"
+  class="flex-1 rounded-xl border border-[#E5E7EB] px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
+  placeholder="Describe this step..."
+></textarea>
                     <button
                       type="button"
                       class="text-xs text-rose-500 px-1"
@@ -419,17 +421,18 @@
                 </div>
                 <div class="space-y-2 max-h-24 overflow-y-auto pr-1">
                   <div
-                    *ngFor="let benefit of formModel.benefits; let i = index"
+                    *ngFor="let benefit of detailsForm.benefits || []; let i = index; trackBy: trackByIndex"
                     class="flex items-start gap-2"
                   >
                     <span class="mt-1 text-sm">✅</span>
                     <input
-                      type="text"
-                      [(ngModel)]="formModel.benefits[i]"
-                      [name]="'benefit-' + i"
-                      class="flex-1 rounded-xl border border-[#E5E7EB] px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
-                      placeholder="Describe a benefit..."
-                    />
+  type="text"
+  [ngModel]="detailsForm.benefits![i]"
+  (ngModelChange)="updateBenefit(i, $event)"
+  [name]="'benefit-' + i"
+  class="flex-1 rounded-xl border border-[#E5E7EB] px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
+  placeholder="Describe a benefit..."
+/>
                     <button
                       type="button"
                       class="text-xs text-rose-500 px-1"
@@ -453,20 +456,18 @@
                   </div>
                   <div class="space-y-2 max-h-24 overflow-y-auto pr-1">
                     <div
-                      *ngFor="
-                        let precaution of formModel.precautions || [];
-                        let i = index
-                      "
+                      *ngFor="let precaution of detailsForm.precautions || []; let i = index; trackBy: trackByIndex"
                       class="flex items-start gap-2"
                     >
                       <span class="mt-1 text-sm">⚠️</span>
                       <input
-                        type="text"
-                        [(ngModel)]="formModel.precautions![i]"
-                        [name]="'precaution-' + i"
-                        class="flex-1 rounded-xl border border-[#E5E7EB] px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
-                        placeholder="Mention a precaution..."
-                      />
+  type="text"
+  [ngModel]="detailsForm.precautions![i]"
+  (ngModelChange)="updatePrecaution(i, $event)"
+  [name]="'precaution-' + i"
+  class="flex-1 rounded-xl border border-[#E5E7EB] px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#C4B5FD]"
+  placeholder="Mention a precaution..."
+/>
                       <button
                         type="button"
                         class="text-xs text-rose-500 px-1"
@@ -481,7 +482,7 @@
             </div>
           </div>
 
-          <!-- Actions + small preview hint -->
+          <!-- Actions -->
           <div class="flex items-center justify-between gap-4">
             <div class="text-xs text-[#6B5B8C]">
               Saving will immediately update how this activity looks in the front-office cards and
@@ -500,7 +501,7 @@
                 type="button"
                 class="inline-flex items-center px-3 py-2 rounded-full bg-rose-50 text-rose-700 text-xs font-medium border border-rose-200 hover:bg-rose-100 transition-colors"
                 (click)="deleteCurrentActivity()"
-                [disabled]="!formModel.id"
+                [disabled]="!activityForm.id"
               >
                 <span class="mr-1">🗑️</span>
                 Delete
@@ -512,4 +513,3 @@
     </section>
   </div>
 </div>
-

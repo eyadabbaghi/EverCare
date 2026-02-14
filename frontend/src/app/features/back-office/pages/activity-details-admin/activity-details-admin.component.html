@@ -55,12 +55,12 @@
             <span
               class="inline-flex items-center rounded-full border px-3 py-1 text-sm"
               [ngClass]="{
-                'bg-green-100 text-green-700 border-green-200': a.difficulty === 'Easy',
-                'bg-yellow-100 text-yellow-700 border-yellow-200': a.difficulty === 'Moderate',
-                'bg-orange-100 text-orange-700 border-orange-200': a.difficulty === 'Challenging'
+                'bg-green-100 text-green-700 border-green-200': (details?.difficulty) === 'Easy',
+                'bg-yellow-100 text-yellow-700 border-yellow-200': (details?.difficulty) === 'Moderate',
+                'bg-orange-100 text-orange-700 border-orange-200': (details?.difficulty) === 'Challenging'
               }"
             >
-              {{ a.difficulty }}
+              {{ details?.difficulty }}
             </span>
             <span
               *ngIf="a.doctorSuggested"
@@ -101,12 +101,12 @@
             <div class="flex items-center gap-2">
               <span>📆</span>
               <ng-container *ngIf="!isEditing; else editFrequency">
-                <span>{{ a.frequency }}</span>
+                <span>{{ details?.frequency }}</span>
               </ng-container>
               <ng-template #editFrequency>
                 <input
                   type="text"
-                  [(ngModel)]="a.frequency"
+                  [(ngModel)]="details!.frequency"
                   class="w-40 rounded-md border border-white/50 bg-black/30 px-2 py-1 text-xs"
                 />
               </ng-template>
@@ -179,7 +179,7 @@
           </div>
           <ol class="space-y-3">
             <li
-              *ngFor="let step of a.instructions; index as i"
+              *ngFor="let step of details?.instructions || []; index as i; trackBy: trackByIndex"
               class="flex gap-4 items-start"
             >
               <span
@@ -194,11 +194,12 @@
               </ng-container>
               <ng-template #editStep>
                 <div class="flex-1 flex gap-2 items-start">
-                  <textarea
-                    rows="2"
-                    [(ngModel)]="a.instructions[i]"
-                    class="flex-1 rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm"
-                  ></textarea>
+                 <textarea
+  rows="2"
+  [ngModel]="details!.instructions[i]"
+  (ngModelChange)="updateInstruction(i, $event)"
+  class="flex-1 rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm"
+></textarea>
                   <button
                     type="button"
                     class="text-xs text-rose-600 px-1"
@@ -228,7 +229,7 @@
           </div>
           <ul class="space-y-2">
             <li
-              *ngFor="let benefit of a.benefits; index as i"
+              *ngFor="let benefit of details?.benefits || []; index as i; trackBy: trackByIndex"
               class="flex items-start gap-2 text-[#2D1B4E]"
             >
               <span class="mt-0.5">✅</span>
@@ -238,10 +239,11 @@
               <ng-template #editBenefit>
                 <div class="flex-1 flex gap-2 items-start">
                   <input
-                    type="text"
-                    [(ngModel)]="a.benefits[i]"
-                    class="flex-1 rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-sm"
-                  />
+  type="text"
+  [ngModel]="details!.benefits[i]"
+  (ngModelChange)="updateBenefit(i, $event)"
+  class="flex-1 rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-sm"
+/>
                   <button
                     type="button"
                     class="text-xs text-rose-600 px-1"
@@ -256,7 +258,7 @@
         </div>
 
         <div
-          *ngIf="a.precautions?.length || isEditing"
+          *ngIf="details?.precautions?.length || isEditing"
           class="border-2 border-orange-200 rounded-2xl bg-orange-50 p-6 space-y-3"
         >
           <div class="flex items-center justify-between">
@@ -274,7 +276,7 @@
           </div>
           <ul class="space-y-2 text-orange-800">
             <li
-              *ngFor="let p of a.precautions || []; index as i"
+              *ngFor="let p of details?.precautions || []; index as i; trackBy: trackByIndex"
               class="flex gap-2 items-start"
             >
               <span>•</span>
@@ -284,10 +286,11 @@
               <ng-template #editPrecaution>
                 <div class="flex-1 flex gap-2 items-start">
                   <input
-                    type="text"
-                    [(ngModel)]="a.precautions![i]"
-                    class="flex-1 rounded-lg border border-orange-200 px-3 py-1 text-sm bg-orange-50"
-                  />
+  type="text"
+  [ngModel]="details!.precautions[i]"
+  (ngModelChange)="updatePrecaution(i, $event)"
+  class="flex-1 rounded-lg border border-orange-200 px-3 py-1 text-sm bg-orange-50"
+/>
                   <button
                     type="button"
                     class="text-xs text-orange-800 px-1"
@@ -371,13 +374,13 @@
             <div class="bg-[#F3E8FF] rounded-lg p-3">
               <p class="text-xs text-[#6B5B8C]">Frequency</p>
               <p class="text-lg font-medium text-[#2D1B4E]">
-                {{ a.frequency }}
+                {{ details?.frequency }}
               </p>
             </div>
             <div class="bg-[#F3E8FF] rounded-lg p-3">
               <p class="text-xs text-[#6B5B8C]">Supervision</p>
               <p class="text-sm font-medium text-[#2D1B4E]">
-                {{ a.supervision }}
+                {{ details?.supervision }}
               </p>
             </div>
             <div class="bg-[#F3E8FF] rounded-lg p-3">
@@ -399,7 +402,7 @@
               <p class="text-xs text-[#6B5B8C] mb-1">Recommended stages</p>
               <div class="flex flex-wrap gap-2">
                 <span
-                  *ngFor="let stage of a.recommendedStage"
+                  *ngFor="let stage of details?.recommendedStage"
                   class="inline-flex items-center rounded-full border px-3 py-1 text-xs"
                 >
                   {{ stage }} stage
@@ -412,4 +415,3 @@
     </section>
   </div>
 </div>
-
