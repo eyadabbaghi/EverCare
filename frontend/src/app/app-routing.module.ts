@@ -5,8 +5,8 @@ import {RegisterComponent} from './features/front-office/pages/register/register
 import {AppointmentsPageComponent} from './features/appointments/pages/appointments-page/appointments-page.component';
 
 const routes: Routes = [
-  {path: 'login', component:LoginComponent },
-  {path: 'appointments', component:AppointmentsPageComponent },
+
+
   {
     path: '',
     loadChildren: () =>

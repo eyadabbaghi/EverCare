@@ -17,10 +17,10 @@
         <div class="relative">
           <div class="w-32 h-32 rounded-full bg-[#C4B5FD] flex items-center justify-center text-3xl text-[#7C3AED] overflow-hidden">
             <ng-container *ngIf="user?.profilePicture; else initials">
-              <img [src]="user?.profilePicture" alt="Profile" class="w-full h-full object-cover">
+              <img [src]="user.profilePicture" alt="Profile" class="w-full h-full object-cover">
             </ng-container>
             <ng-template #initials>
-              <span>{{ getInitials(user?.name) }}</span>
+              <span>{{ getInitials(user.name) }}</span>
             </ng-template>
           </div>
 
