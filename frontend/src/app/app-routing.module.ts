@@ -7,10 +7,28 @@ import {AppointmentsPageComponent} from './features/appointments/pages/appointme
 const routes: Routes = [
   {path: 'login', component:LoginComponent },
   {path: 'appointments', component:AppointmentsPageComponent },
+  {
+    path: '',
+    loadChildren: () =>
+      import('./features/front-office/front-office.module').then(
+        (m) => m.FrontOfficeModule,
+      ),
+  },
+  {
+    path: '',
+    loadChildren: () =>
+      import('./features/back-office/back-office.module').then(
+        (m) => m.BackOfficeModule,
+      ),
+  },
+  {
+    path: '**',
+    redirectTo: '',
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

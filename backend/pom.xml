@@ -6,6 +6,7 @@
 
 
     <groupId>com.Brainiacs</groupId>
+
     <artifactId>microservices-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -30,6 +31,12 @@
         <module>ApiGateway</module>
 
 
+        <module>Activities</module>
+        <module>Alerts</module>
+        <module>User</module>
+        <!-- Comment these out until you actually create the folders -->
+        <!-- <module>gateway-service</module> -->
+        <!-- <module>auth-service</module> -->
     </modules>
 
     <dependencyManagement>
@@ -51,6 +58,13 @@
             <version>1.18.34</version>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
@@ -58,10 +72,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.32</version> <!-- Latest stable -->
+            <scope>provided</scope>
+
         </dependency>
+
+
     </dependencies>
 
     <build>

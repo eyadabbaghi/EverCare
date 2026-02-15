@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
+
 import { FrontOfficeRoutingModule } from './front-office-routing.module';
 import { HomeComponent } from './pages/home/home.component';
 import { AboutComponent } from './pages/about/about.component';
@@ -15,7 +16,18 @@ import { TestimonialComponent } from './components/testimonial/testimonial.compo
 import { TeamMemberComponent } from './components/team-member/team-member.component';
 import { ContactFormComponent } from './components/contact-form/contact-form.component';
 import { NewsletterComponent } from './components/newsletter/newsletter.component';
-import {ReactiveFormsModule} from "@angular/forms";
+import { SharedModule } from '../../shared/shared.module';
+import { ActivitiesComponent } from './pages/activities/activities.component';
+import { ActivityDetailsComponent } from './pages/activity-details/activity-details.component';
+import { AlertsComponent } from './pages/alerts/alerts.component';
+import { NavigationComponent } from './ui/navigation/navigation.component';
+import { AiAssistantComponent } from './ui/ai-assistant/ai-assistant.component';
+import { WelcomePopupComponent } from './ui/welcome-popup/welcome-popup.component';
+import { AlzheimersAssessmentComponent } from './ui/alzheimers-assessment/alzheimers-assessment.component';
+import { ProfileComponent } from './pages/profile/profile.component';
+import { LucideAngularModule } from 'lucide-angular';
+import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 
 
 @NgModule({
@@ -32,12 +44,32 @@ import {ReactiveFormsModule} from "@angular/forms";
     TestimonialComponent,
     TeamMemberComponent,
     ContactFormComponent,
-    NewsletterComponent
+    NewsletterComponent,
+    ActivitiesComponent,
+    ActivityDetailsComponent,
+    AlertsComponent,
+    NavigationComponent,
+    AiAssistantComponent,
+    WelcomePopupComponent,
+    AlzheimersAssessmentComponent,
+    ProfileComponent,
+    NewUserFlowComponent,
   ],
-    imports: [
-        CommonModule,
-        FrontOfficeRoutingModule,
-        ReactiveFormsModule
-    ]
+
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    SharedModule,
+    FrontOfficeRoutingModule,
+    LucideAngularModule,
+    CommonModule,
+    FrontOfficeRoutingModule,
+
+  ],
+  exports: [
+    NavigationComponent,
+    AiAssistantComponent,
+  ],
 })
-export class FrontOfficeModule { }
+export class FrontOfficeModule {}

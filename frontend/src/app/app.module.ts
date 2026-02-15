@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
-
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CoreModule } from './core/core.module';
@@ -21,22 +20,35 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
 import {ReactiveFormsModule} from '@angular/forms';
 import {RouterModule} from '@angular/router';
+
+// Import the interceptor
+import { AuthInterceptor } from './features/front-office/pages/login/auth.interceptor';
+import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http'; // adjust path if needed
+
 @NgModule({
-    declarations: [
-        AppComponent,
-        BackOfficeLayoutComponent,
-        SidebarComponent,
-        NavbarComponent,
-        FooterComponent,
-        FrontOfficeLayoutComponent,
-        HeaderComponent,
-        HeroComponent,
 
-
-    ],
+  declarations: [
+    AppComponent,
+    BackOfficeLayoutComponent,
+    SidebarComponent,
+    NavbarComponent,
+    FooterComponent,
+    FrontOfficeLayoutComponent,
+    HeaderComponent,
+    HeroComponent,
+    AppComponent,
+    BackOfficeLayoutComponent,
+    SidebarComponent,
+    NavbarComponent,
+    FooterComponent,
+    FrontOfficeLayoutComponent,
+    HeaderComponent,
+    HeroComponent
+  ],
   imports: [
     BrowserModule,
     AppRoutingModule,
+    HttpClientModule,
     CoreModule,
     SharedModule,
     LayoutsModule,
@@ -57,7 +69,8 @@ import {RouterModule} from '@angular/router';
 
   ],
   providers: [
-    provideClientHydration()
+    provideClientHydration(),
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true } // Add this line
   ],
   bootstrap: [AppComponent]
 })

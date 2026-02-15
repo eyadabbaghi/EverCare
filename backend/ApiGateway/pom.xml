@@ -13,9 +13,23 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>ApiGateway</name>
     <description>ApiGateway</description>
+    <url/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
+    </scm>
 
     <properties>
         <java.version>17</java.version>
+
         <spring-cloud.version>2023.0.1</spring-cloud.version> <!-- Updated to compatible version -->
     </properties>
 
@@ -24,6 +38,7 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
+
         </dependency>
 
         <!-- Eureka Client for Service Discovery -->
