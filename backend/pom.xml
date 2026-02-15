@@ -24,10 +24,13 @@
 
     <!-- MUST match your folder names exactly -->
     <modules>
+        <module>Eureka-service</module>
+        <module>ApiGateway</module>
         <module>appointment-service</module>
         <module>Activities</module>
         <module>Alerts</module>
         <module>User</module>
+        <module>communication-service</module>
         <!-- Comment these out until you actually create the folders -->
         <!-- <module>gateway-service</module> -->
         <!-- <module>auth-service</module> -->
