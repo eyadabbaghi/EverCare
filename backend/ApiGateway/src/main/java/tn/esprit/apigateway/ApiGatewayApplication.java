@@ -21,9 +21,13 @@ public class ApiGatewayApplication {
 
         return builder.routes()
                 .route("appointment-service", r -> r
-                        .path("/api/appointments/**")
+                            .path("/api/appointments/**")
                         .uri("lb://APPOINTMENT-SERVICE"))
-
+                .route("user-service", r -> r
+                        .path("/EverCare/admin/**",  // Pour lAdmin
+                                "/EverCare/auth/**",       // Pour lauth
+                                "/EverCare/users/**")      // Pour le user
+                        .uri("lb://USER-SERVICE"))
                 .build();
     }
 
