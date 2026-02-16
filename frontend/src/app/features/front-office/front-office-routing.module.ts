@@ -7,8 +7,11 @@ import { ActivityDetailsComponent } from './pages/activity-details/activity-deta
 import { AlertsComponent } from './pages/alerts/alerts.component';
 import { FrontOfficeLayoutComponent } from '../../layouts/front-office-layout/front-office-layout.component';
 import { ProfileComponent } from './pages/profile/profile.component';
+import { SetupProfileComponent } from './pages/setup-profile/setup-profile.component';
 
 const routes: Routes = [
+  { path: 'setup-profile', component: SetupProfileComponent },
+
   {
     path: '',
     component: FrontOfficeLayoutComponent,

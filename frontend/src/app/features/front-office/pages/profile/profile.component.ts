@@ -1,38 +1,23 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AuthService, User, UpdateUserRequest, ChangePasswordRequest } from '../login/auth.service';
 
-// Custom validator for date of birth (must be in the past)
+// Custom validators
 function pastDateValidator(control: AbstractControl): ValidationErrors | null {
   const date = new Date(control.value);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (date >= today) {
-    return { futureDate: true };
-  }
+  if (date >= today) return { futureDate: true };
   return null;
 }
 
-// Custom validator for phone number (allow digits, spaces, +, -, parentheses)
 function phoneValidator(control: AbstractControl): ValidationErrors | null {
   const phoneRegex = /^[0-9+\-() ]+$/;
-  if (control.value && !phoneRegex.test(control.value)) {
-    return { invalidPhone: true };
-  }
+  if (control.value && !phoneRegex.test(control.value)) return { invalidPhone: true };
   return null;
-}
-
-interface ProfileData {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  dateOfBirth: string;
-  emergencyContact: string;
-  bloodType: string;
-  allergies: string;
 }
 
 @Component({
@@ -41,28 +26,20 @@ interface ProfileData {
   styleUrls: ['./profile.component.css'],
 })
 export class ProfileComponent implements OnInit, OnDestroy {
-  activeTab: 'personal' | 'health' | 'settings' = 'personal';
+  activeTab: 'personal' | 'settings' = 'personal';
   isEditing = false;
   isChangingPassword = false;
   isLoading = false;
+  showPictureMenu = false;
+  selectedFile: File | null = null;
 
   user: User | null = null;
   private userSub!: Subscription;
 
-  // Profile picture
-  showPictureMenu = false;
-  selectedFile: File | null = null;
+  personalForm: FormGroup;
+  passwordData = { currentPassword: '', newPassword: '' };
 
-  // Password change form
-  passwordData = {
-    currentPassword: '',
-    newPassword: ''
-  };
-
-  // Reactive form for personal info
-  personalForm!: FormGroup;
-
-  // Country codes with flags (simplified)
+  // Country codes
   countries = [
     { code: '+1', flag: '🇺🇸', name: 'USA' },
     { code: '+44', flag: '🇬🇧', name: 'UK' },
@@ -78,31 +55,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
     { code: '+7', flag: '🇷🇺', name: 'Russia' },
     { code: '+27', flag: '🇿🇦', name: 'South Africa' },
   ];
-
-  // Selected country codes (default to USA)
   phoneCountryCode = '+1';
   emergencyCountryCode = '+1';
 
-  profileData: ProfileData = {
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    dateOfBirth: '',
-    emergencyContact: '',
-    bloodType: '',
-    allergies: '',
-  };
+  // Role‑specific connected users (full User objects)
+  caregivers: User[] = [];
+  patients: User[] = [];
+  assignedDoctor: User | null = null;
+
+  // Modal states
+  showDoctorSearch = false;
+  showCaregiverSearch = false;      // for patients adding caregivers
+  showPatientSearch = false;         // for caregivers adding patients
 
   constructor(
-    private readonly toastr: ToastrService,
-    private authService: AuthService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastr: ToastrService,
+    private authService: AuthService
   ) {
-    this.createForm();
-  }
-
-  private createForm(): void {
     this.personalForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -110,6 +80,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
       address: [''],
       dateOfBirth: ['', [Validators.required, pastDateValidator]],
       emergencyContact: ['', [Validators.required, phoneValidator]],
+      yearsExperience: [''],
+      specialization: [''],
+      medicalLicense: [''],
+      workplaceType: [''],
+      workplaceName: [''],
     });
   }
 
@@ -117,21 +92,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.userSub = this.authService.currentUser$.subscribe((user: User | null) => {
       this.user = user;
       if (user) {
-        this.profileData = {
-          name: user.name,
-          email: user.email,
-          phone: user.phone || '',
-          address: this.profileData.address, // not stored yet
-          dateOfBirth: this.profileData.dateOfBirth, // not stored yet
-          emergencyContact: this.profileData.emergencyContact, // not stored yet
-          bloodType: this.profileData.bloodType,
-          allergies: this.profileData.allergies,
-        };
-        this.personalForm.patchValue({
-          name: user.name,
-          email: user.email,
-          phone: user.phone || '',
-        });
+        this.populateForm();
+        this.loadConnectedUsers();
       }
     });
   }
@@ -140,19 +102,78 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (this.userSub) this.userSub.unsubscribe();
   }
 
-  setTab(tab: 'personal' | 'health' | 'settings'): void {
-    this.activeTab = tab;
-    if (tab !== 'settings') {
-      this.isChangingPassword = false;
+  private populateForm(): void {
+    if (!this.user) return;
+    this.personalForm.patchValue({
+      name: this.user.name,
+      email: this.user.email,
+      phone: this.user.phone || '',
+      dateOfBirth: this.user.dateOfBirth || '',
+      emergencyContact: this.user.emergencyContact || '',
+      yearsExperience: this.user.yearsExperience,
+      specialization: this.user.specialization,
+      medicalLicense: this.user.medicalLicense,
+      workplaceType: this.user.workplaceType,
+      workplaceName: this.user.workplaceName,
+    });
+  }
+
+  private loadConnectedUsers(): void {
+    if (!this.user) return;
+
+    const fetchUser = (email: string) => 
+      this.authService.getUserByEmail(email).pipe(
+        catchError(() => of({ email, name: email.split('@')[0] } as User))
+      );
+
+    if (this.user.role === 'PATIENT') {
+      // Caregivers
+      const caregiverEmails = this.user.caregiverEmails || [];
+      if (caregiverEmails.length) {
+        forkJoin(caregiverEmails.map(email => fetchUser(email))).subscribe(users => {
+          this.caregivers = users;
+        });
+      } else {
+        this.caregivers = [];
+      }
+
+      // Doctor
+      if (this.user.doctorEmail) {
+        fetchUser(this.user.doctorEmail).subscribe(doctor => {
+          this.assignedDoctor = doctor;
+        });
+      } else {
+        this.assignedDoctor = null;
+      }
+    } else if (this.user.role === 'CAREGIVER') {
+      const patientEmails = this.user.patientEmails || [];
+      if (patientEmails.length) {
+        forkJoin(patientEmails.map(email => fetchUser(email))).subscribe(users => {
+          this.patients = users;
+        });
+      } else {
+        this.patients = [];
+      }
+    } else if (this.user.role === 'DOCTOR') {
+      const patientEmails = this.user.patientEmails || [];
+      if (patientEmails.length) {
+        forkJoin(patientEmails.map(email => fetchUser(email))).subscribe(users => {
+          this.patients = users;
+        });
+      } else {
+        this.patients = [];
+      }
     }
   }
 
+  setTab(tab: 'personal' | 'settings'): void {
+    this.activeTab = tab;
+    if (tab !== 'settings') this.isChangingPassword = false;
+  }
+
   toggleEdit(): void {
-    if (this.isEditing) {
-      this.handleSaveProfile();
-    } else {
-      this.isEditing = true;
-    }
+    if (this.isEditing) this.handleSaveProfile();
+    else this.isEditing = true;
   }
 
   handleSaveProfile(): void {
@@ -160,7 +181,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     if (this.personalForm.invalid) {
       this.personalForm.markAllAsTouched();
-      this.toastr.warning('Please fix the errors in the form', 'Validation Error');
+      this.toastr.warning('Please fix the errors in the form');
       return;
     }
 
@@ -168,30 +189,31 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const updateData: UpdateUserRequest = {
       name: formValue.name,
       email: formValue.email,
-      phone: formValue.phone, // we send the full number including country code
+      phone: formValue.phone,
+      dateOfBirth: formValue.dateOfBirth,
+      emergencyContact: formValue.emergencyContact,
     };
+
+    if (this.user.role === 'DOCTOR') {
+      updateData.yearsExperience = formValue.yearsExperience;
+      updateData.specialization = formValue.specialization;
+      updateData.medicalLicense = formValue.medicalLicense;
+      updateData.workplaceType = formValue.workplaceType;
+      updateData.workplaceName = formValue.workplaceName;
+    }
 
     this.isLoading = true;
     this.authService.updateProfile(updateData).subscribe({
       next: (response) => {
-        this.toastr.success('Profile updated successfully!', 'Success');
+        this.toastr.success('Profile updated successfully');
         this.isEditing = false;
         this.isLoading = false;
-
-        if (this.user) {
-          this.user.name = response.user.name;
-          this.user.email = response.user.email;
-          this.user.phone = response.user.phone;
-        }
-
-        if (response.token) {
-          localStorage.setItem('auth_token', response.token);
-        }
+        if (response.token) localStorage.setItem('auth_token', response.token);
+        if (response.user) this.authService.fetchCurrentUser().subscribe();
       },
       error: (err) => {
-        console.error('Update failed', err);
-        const errorMsg = err.error?.message || 'Failed to update profile';
-        this.toastr.error(errorMsg, 'Error');
+        console.error(err);
+        this.toastr.error('Failed to update profile');
         this.isLoading = false;
       }
     });
@@ -204,27 +226,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   handleChangePassword(): void {
     if (!this.passwordData.currentPassword || !this.passwordData.newPassword) {
-      this.toastr.warning('Please fill all fields', 'Warning');
+      this.toastr.warning('Fill all fields');
       return;
     }
-
     this.isLoading = true;
     const request: ChangePasswordRequest = {
       currentPassword: this.passwordData.currentPassword,
       newPassword: this.passwordData.newPassword
     };
-
     this.authService.changePassword(request).subscribe({
       next: () => {
-        this.toastr.success('Password changed successfully', 'Success');
+        this.toastr.success('Password changed');
         this.isChangingPassword = false;
         this.isLoading = false;
         this.passwordData = { currentPassword: '', newPassword: '' };
       },
       error: (err) => {
-        console.error('Password change failed', err);
-        const errorMsg = err.error?.message || 'Failed to change password';
-        this.toastr.error(errorMsg, 'Error');
+        console.error(err);
+        this.toastr.error('Password change failed');
         this.isLoading = false;
       }
     });
@@ -234,12 +253,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   togglePictureMenu(): void {
     this.showPictureMenu = !this.showPictureMenu;
   }
-
   triggerFileInput(): void {
-    const fileInput = document.getElementById('profile-picture-input') as HTMLInputElement;
-    fileInput.click();
+    document.getElementById('profile-picture-input')?.click();
   }
-
   onFileSelected(event: any): void {
     const file = event.target.files[0];
     if (file) {
@@ -247,84 +263,156 @@ export class ProfileComponent implements OnInit, OnDestroy {
       this.uploadPicture();
     }
   }
-
   uploadPicture(): void {
     if (!this.selectedFile) return;
     this.isLoading = true;
     this.authService.uploadProfilePicture(this.selectedFile).subscribe({
       next: (response) => {
-        this.toastr.success('Profile picture updated', 'Success');
-        if (this.user) {
-          this.user.profilePicture = response.profilePicture;
-        }
+        this.toastr.success('Profile picture updated');
+        if (this.user) this.user.profilePicture = response.profilePicture;
         this.authService.fetchCurrentUser().subscribe();
         this.isLoading = false;
         this.showPictureMenu = false;
         this.selectedFile = null;
       },
       error: (err) => {
-        console.error('Upload failed', err);
-        this.toastr.error('Failed to upload picture', 'Error');
+        console.error(err);
+        this.toastr.error('Upload failed');
         this.isLoading = false;
       }
     });
   }
-
   removePicture(): void {
     this.isLoading = true;
     this.authService.removeProfilePicture().subscribe({
       next: () => {
-        this.toastr.success('Profile picture removed', 'Success');
-        if (this.user) {
-          this.user.profilePicture = undefined;
-        }
+        this.toastr.success('Profile picture removed');
+        if (this.user) this.user.profilePicture = undefined;
         this.authService.fetchCurrentUser().subscribe();
         this.isLoading = false;
         this.showPictureMenu = false;
       },
       error: (err) => {
-        console.error('Remove failed', err);
-        this.toastr.error('Failed to remove picture', 'Error');
+        console.error(err);
+        this.toastr.error('Remove failed');
         this.isLoading = false;
       }
     });
   }
 
+  // Account deletion
   confirmDeleteAccount(): void {
-    const confirmed = confirm('Are you sure you want to delete your account? This action cannot be undone.');
-    if (confirmed) {
+    if (confirm('Delete your account? This cannot be undone.')) {
       this.deleteAccount();
     }
   }
-
   private deleteAccount(): void {
     this.isLoading = true;
     this.authService.deleteAccount().subscribe({
       next: () => {
-        this.toastr.success('Account deleted', 'Goodbye');
+        this.toastr.success('Account deleted');
         this.authService.logout();
       },
       error: (err) => {
-        console.error('Delete failed', err);
-        const errorMsg = err.error?.message || 'Failed to delete account';
-        this.toastr.error(errorMsg, 'Error');
+        console.error(err);
+        this.toastr.error('Delete failed');
         this.isLoading = false;
       }
     });
   }
 
-  getInitials(name: string | undefined): string {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
+  // ========== Care connection methods ==========
+  onDoctorSelected(doctor: User): void {
+    const updateData: UpdateUserRequest = { doctorEmail: doctor.email };
+    this.isLoading = true;
+    this.authService.updateProfile(updateData).subscribe({
+      next: () => {
+        this.toastr.success(`Dr. ${doctor.name} added to your care team`);
+        this.authService.fetchCurrentUser().subscribe();
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.toastr.error('Failed to associate doctor');
+        this.isLoading = false;
+      }
+    });
   }
 
-  // Helper to check if a form control is invalid and touched
-  isInvalid(controlName: string): boolean {
-    const control = this.personalForm.get(controlName);
-    return control ? control.invalid && control.touched : false;
+  // For patients adding caregivers
+  onCaregiverSelected(caregiver: User): void {
+    const updateData: UpdateUserRequest = { connectedEmail: caregiver.email };
+    this.authService.updateProfile(updateData).subscribe({
+      next: () => {
+        this.toastr.success(`Caregiver ${caregiver.name} added`);
+        this.authService.fetchCurrentUser().subscribe();
+      },
+      error: (err) => {
+        console.error(err);
+        this.toastr.error('Failed to associate caregiver');
+      }
+    });
   }
+
+  // For caregivers adding patients
+  onPatientSelected(patient: User): void {
+    const updateData: UpdateUserRequest = { connectedEmail: patient.email };
+    this.authService.updateProfile(updateData).subscribe({
+      next: () => {
+        this.toastr.success(`Patient ${patient.name} added`);
+        this.authService.fetchCurrentUser().subscribe();
+      },
+      error: (err) => {
+        console.error(err);
+        this.toastr.error('Failed to associate patient');
+      }
+    });
+  }
+
+ removeConnection(user: User): void {
+  let updateData: UpdateUserRequest = {};
+  if (user.role === 'DOCTOR') {
+    // Send the same email to toggle (backend will clear if it's the same)
+    updateData.doctorEmail = user.email;
+  } else {
+    // For caregiver/patient, send the email to toggle
+    updateData.connectedEmail = user.email;
+  }
+  this.authService.updateProfile(updateData).subscribe({
+    next: () => {
+      this.toastr.info(`${user.role} removed`);
+      this.authService.fetchCurrentUser().subscribe();
+    },
+    error: (err) => {
+      console.error(err);
+      this.toastr.error('Failed to remove connection');
+    }
+  });
+}
+
+  // Helpers
+  getInitials(name: string | undefined): string {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  }
+
+  isInvalid(controlName: string): boolean {
+    const ctrl = this.personalForm.get(controlName);
+    return ctrl ? ctrl.invalid && ctrl.touched : false;
+  }
+
+  getRoleBadgeColor(): string {
+    switch (this.user?.role) {
+      case 'PATIENT': return 'bg-blue-500';
+      case 'CAREGIVER': return 'bg-green-500';
+      case 'DOCTOR': return 'bg-purple-500';
+      default: return 'bg-gray-500';
+    }
+  }
+
+  trackByEmail(index: number, item: User): string {
+    return item.email;
+  }
+
+  
 }

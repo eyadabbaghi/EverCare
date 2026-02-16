@@ -8,11 +8,13 @@ import tn.esprit.user.dto.ChangePasswordRequest;
 import tn.esprit.user.dto.UpdateUserRequest;
 import tn.esprit.user.dto.UserDto;
 import tn.esprit.user.entity.User;
+import tn.esprit.user.entity.UserRole;
 import tn.esprit.user.repository.UserRepository;
 import tn.esprit.user.service.UserService;
 import tn.esprit.user.security.JwtUtil;
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.stream.Collectors;
+
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 
@@ -83,6 +87,23 @@ public class UserController {
         dto.setDateOfBirth(user.getDateOfBirth());
         dto.setEmergencyContact(user.getEmergencyContact());
         dto.setProfilePicture(user.getProfilePicture());
+
+        // Doctor fields
+        dto.setYearsExperience(user.getYearsExperience());
+        dto.setSpecialization(user.getSpecialization());
+        dto.setMedicalLicense(user.getMedicalLicense());
+        dto.setWorkplaceType(user.getWorkplaceType());
+        dto.setWorkplaceName(user.getWorkplaceName());
+        dto.setDoctorEmail(user.getDoctorEmail());
+        // Relationships
+        if (user.getRole() == UserRole.PATIENT) {
+            dto.setCaregiverEmails(user.getCaregivers().stream()
+                    .map(User::getEmail).collect(java.util.stream.Collectors.toSet()));
+        } else if (user.getRole() == UserRole.CAREGIVER) {
+            dto.setPatientEmails(user.getPatients().stream()
+                    .map(User::getEmail).collect(java.util.stream.Collectors.toSet()));
+        }
+
         return dto;
     }
 
@@ -127,5 +148,20 @@ public class UserController {
         user.setProfilePicture(null);
         userRepository.save(user);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserDto>> searchUsers(@RequestParam String q, @RequestParam UserRole role) {
+        List<User> users = userService.searchUsersByRole(q, role);
+        List<UserDto> dtos = users.stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/by-email")
+    public ResponseEntity<UserDto> getUserByEmail(@RequestParam String email) {
+        User user = userService.findByEmail(email);
+        return ResponseEntity.ok(mapToDto(user));
     }
 }

@@ -29,20 +29,49 @@ export interface User {
   phone?: string;
   isVerified?: boolean;
   createdAt?: string;
-  profilePicture?: string; 
+  profilePicture?: string;
+
+  // New profile fields
+  dateOfBirth?: string;          // LocalDate as string (ISO format)
+  emergencyContact?: string;
+
+  // Doctor fields
+  yearsExperience?: number;
+  specialization?: string;
+  medicalLicense?: string;
+  workplaceType?: string;
+  workplaceName?: string;
+
+  // Relationship emails (for display)
+  caregiverEmails?: string[];
+  patientEmails?: string[];
+  doctorEmail?: string;
 }
-// Add these interfaces at the top
+
 export interface UpdateUserRequest {
   name?: string;
   email?: string;
   phone?: string;
+  dateOfBirth?: string;
+  emergencyContact?: string;
+  profilePicture?: string;
+
+  // Doctor fields
+  yearsExperience?: number;
+  specialization?: string;
+  medicalLicense?: string;
+  workplaceType?: string;
+  workplaceName?: string;
+
+  // For patient/caregiver linking (one email at a time)
+  connectedEmail?: string;
+  doctorEmail?: string; 
 }
 
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
-
 
 @Injectable({
   providedIn: 'root'
@@ -74,10 +103,6 @@ export class AuthService {
     );
   }
 
-  /**
-   * Fetches the currently authenticated user's details.
-   * Sends the JWT token in the Authorization header.
-   */
   fetchCurrentUser(): Observable<User> {
     const headers = new HttpHeaders().set('Authorization', `Bearer ${this.getToken()}`);
     return this.http.get<User>(`${this.apiUrl}/me`, { headers }).pipe(
@@ -90,20 +115,12 @@ export class AuthService {
     );
   }
 
- private handleAuth(response: AuthResponse): void {
-  this.storeToken(response.token);
-  // After storing token, fetch the user details
-  this.fetchCurrentUser().subscribe({
-    next: (user) => {
-      // Set flag for new user welcome flow (only for registration, not login)
-      // We need to know if this was a registration. We can't differentiate here.
-      // So we'll move the flag setting to the LoginComponent after successful registration.
-    },
-    error: (err) => {
-      console.error('Failed to fetch user after auth', err);
-    }
-  });
-}
+  private handleAuth(response: AuthResponse): void {
+    this.storeToken(response.token);
+    this.fetchCurrentUser().subscribe({
+      error: (err) => console.error('Failed to fetch user after auth', err)
+    });
+  }
 
   private storeToken(token: string): void {
     if (this.isBrowser) {
@@ -140,26 +157,41 @@ export class AuthService {
     }
   }
 
-  // Inside AuthService class, add these methods:
-updateProfile(data: UpdateUserRequest): Observable<any> {
-  return this.http.put<any>(`${this.apiUrl.replace('/auth', '')}/users/profile`, data);
+  updateProfile(data: UpdateUserRequest): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl.replace('/auth', '')}/users/profile`, data);
+  }
+
+  changePassword(data: ChangePasswordRequest): Observable<any> {
+    return this.http.put(`${this.apiUrl.replace('/auth', '')}/users/change-password`, data);
+  }
+
+  deleteAccount(): Observable<any> {
+    return this.http.delete(`${this.apiUrl.replace('/auth', '')}/users/profile`);
+  }
+
+  uploadProfilePicture(file: File): Observable<{ profilePicture: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ profilePicture: string }>(`${this.apiUrl.replace('/auth', '')}/users/profile/picture`, formData);
+  }
+
+  removeProfilePicture(): Observable<any> {
+    return this.http.delete(`${this.apiUrl.replace('/auth', '')}/users/profile/picture`);
+  }
+
+
+  searchUsersByRole(term: string, role: string): Observable<User[]> {
+  return this.http.get<User[]>(`${this.apiUrl.replace('/auth', '')}/users/search`, {
+    params: { q: term, role }
+  });
 }
-changePassword(data: ChangePasswordRequest): Observable<any> {
-  return this.http.put(`${this.apiUrl.replace('/auth', '')}/users/change-password`, data);
+getUserByEmail(email: string): Observable<User> {
+  return this.http.get<User>(`${this.apiUrl.replace('/auth', '')}/users/by-email`, {
+    params: { email }
+  });
 }
 
-deleteAccount(): Observable<any> {
-  return this.http.delete(`${this.apiUrl.replace('/auth', '')}/users/profile`);
-}
-
-
-uploadProfilePicture(file: File): Observable<{ profilePicture: string }> {
-  const formData = new FormData();
-  formData.append('file', file);
-  return this.http.post<{ profilePicture: string }>(`${this.apiUrl.replace('/auth', '')}/users/profile/picture`, formData);
-}
-
-removeProfilePicture(): Observable<any> {
-  return this.http.delete(`${this.apiUrl.replace('/auth', '')}/users/profile/picture`);
+googleLogin(idToken: string): Observable<AuthResponse> {
+  return this.http.post<AuthResponse>(`${this.apiUrl}/google`, { idToken });
 }
 }
