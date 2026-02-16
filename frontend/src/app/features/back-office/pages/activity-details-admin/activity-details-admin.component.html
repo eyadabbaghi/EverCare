@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-[#FAF8FC] p-6" *ngIf="activity as a">
+<div class="min-h-screen bg-[#FAF8FC] p-6" *ngIf="activity">
   <div class="max-w-5xl mx-auto space-y-6">
     <!-- Back + header actions -->
     <div class="flex items-center justify-between gap-4">
@@ -28,12 +28,12 @@
       </div>
     </div>
 
-    <!-- Hero -->
+    <!-- Hero (some fields editable when isEditing) -->
     <section class="border-2 border-[#DDD6FE] rounded-2xl overflow-hidden bg-white">
       <div class="relative h-80 overflow-hidden">
         <img
-          [src]="a.imageUrl"
-          [alt]="a.name"
+          [src]="activity.imageUrl"
+          [alt]="activity.name"
           class="w-full h-full object-cover"
         />
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
@@ -43,14 +43,14 @@
             <span
               class="inline-flex items-center rounded-full border px-3 py-1 text-sm"
               [ngClass]="{
-                'bg-blue-100 text-blue-700 border-blue-200': a.type === 'Relaxation',
-                'bg-purple-100 text-purple-700 border-purple-200': a.type === 'Cognitive',
-                'bg-green-100 text-green-700 border-green-200': a.type === 'Physical',
-                'bg-pink-100 text-pink-700 border-pink-200': a.type === 'Social',
-                'bg-orange-100 text-orange-700 border-orange-200': a.type === 'Creative'
+                'bg-blue-100 text-blue-700 border-blue-200': activity.type === 'Relaxation',
+                'bg-purple-100 text-purple-700 border-purple-200': activity.type === 'Cognitive',
+                'bg-green-100 text-green-700 border-green-200': activity.type === 'Physical',
+                'bg-pink-100 text-pink-700 border-pink-200': activity.type === 'Social',
+                'bg-orange-100 text-orange-700 border-orange-200': activity.type === 'Creative'
               }"
             >
-              {{ a.type }}
+              {{ activity.type }}
             </span>
             <span
               class="inline-flex items-center rounded-full border px-3 py-1 text-sm"
@@ -63,42 +63,60 @@
               {{ details?.difficulty }}
             </span>
             <span
-              *ngIf="a.doctorSuggested"
+              *ngIf="activity.doctorSuggested"
               class="inline-flex items-center rounded-full bg-[#C4B5FD] text-[#2D1B4E] border border-[#7C3AED] px-3 py-1 text-sm"
             >
               ✨ Doctor suggested
             </span>
           </div>
 
-          <h1 class="text-4xl md:text-5xl font-bold">
-            <ng-container *ngIf="!isEditing; else editTitle">
-              {{ a.name }}
-            </ng-container>
-            <ng-template #editTitle>
-              <input
-                type="text"
-                [(ngModel)]="a.name"
-                class="mt-2 w-full max-w-xl rounded-xl border border-white/50 bg-black/30 px-3 py-2 text-lg"
-              />
-            </ng-template>
-          </h1>
+          <!-- Editable title -->
+          <div [formGroup]="activityForm">
+            <h1 class="text-4xl md:text-5xl font-bold">
+              <ng-container *ngIf="!isEditing; else editTitle">
+                {{ activity.name }}
+              </ng-container>
+              <ng-template #editTitle>
+                <input
+                  type="text"
+                  formControlName="name"
+                  class="mt-2 w-full max-w-xl rounded-xl border border-white/50 bg-black/30 px-3 py-2 text-lg"
+                  [class.border-red-500]="activityForm.get('name')?.invalid && activityForm.get('name')?.touched"
+                />
+                <div *ngIf="activityForm.get('name')?.invalid && activityForm.get('name')?.touched" class="text-red-500 text-xs mt-1">
+                  <span *ngIf="activityForm.get('name')?.errors?.['required']">Name is required.</span>
+                  <span *ngIf="activityForm.get('name')?.errors?.['minlength']">Minimum 3 characters.</span>
+                  <span *ngIf="activityForm.get('name')?.errors?.['maxlength']">Maximum 100 characters.</span>
+                </div>
+              </ng-template>
+            </h1>
+          </div>
 
           <div class="flex flex-wrap items-center gap-4 text-sm">
-            <div class="flex items-center gap-2">
+            <!-- Duration -->
+            <div class="flex items-center gap-2" [formGroup]="activityForm">
               <span>⏱</span>
               <ng-container *ngIf="!isEditing; else editDuration">
-                <span>{{ a.duration }} minutes</span>
+                <span>{{ activity.duration }} minutes</span>
               </ng-container>
               <ng-template #editDuration>
                 <input
                   type="number"
                   min="1"
-                  [(ngModel)]="a.duration"
+                  formControlName="duration"
                   class="w-20 rounded-md border border-white/50 bg-black/30 px-2 py-1 text-xs"
+                  [class.border-red-500]="activityForm.get('duration')?.invalid && activityForm.get('duration')?.touched"
                 />
+                <div *ngIf="activityForm.get('duration')?.invalid && activityForm.get('duration')?.touched" class="text-red-500 text-xs">
+                  <span *ngIf="activityForm.get('duration')?.errors?.['required']">Required.</span>
+                  <span *ngIf="activityForm.get('duration')?.errors?.['min']">Min 1.</span>
+                  <span *ngIf="activityForm.get('duration')?.errors?.['max']">Max 480.</span>
+                </div>
               </ng-template>
             </div>
-            <div class="flex items-center gap-2">
+
+            <!-- Frequency (from detailsForm) -->
+            <div class="flex items-center gap-2" [formGroup]="detailsForm">
               <span>📆</span>
               <ng-container *ngIf="!isEditing; else editFrequency">
                 <span>{{ details?.frequency }}</span>
@@ -106,33 +124,42 @@
               <ng-template #editFrequency>
                 <input
                   type="text"
-                  [(ngModel)]="details!.frequency"
+                  formControlName="frequency"
                   class="w-40 rounded-md border border-white/50 bg-black/30 px-2 py-1 text-xs"
+                  [class.border-red-500]="detailsForm.get('frequency')?.invalid && detailsForm.get('frequency')?.touched"
                 />
+                <div *ngIf="detailsForm.get('frequency')?.invalid && detailsForm.get('frequency')?.touched" class="text-red-500 text-xs">
+                  Frequency is required.
+                </div>
               </ng-template>
             </div>
-            <div class="flex items-center gap-2">
+
+            <!-- Location (from activityForm) -->
+            <div class="flex items-center gap-2" [formGroup]="activityForm">
               <span>📍</span>
               <ng-container *ngIf="!isEditing; else editLocation">
-                <span>{{ a.location }}</span>
+                <span>{{ activity.location }}</span>
               </ng-container>
               <ng-template #editLocation>
                 <input
                   type="text"
-                  [(ngModel)]="a.location"
+                  formControlName="location"
                   class="w-56 rounded-md border border-white/50 bg-black/30 px-2 py-1 text-xs"
                 />
+                <!-- optional, no validation -->
               </ng-template>
             </div>
-            <div class="flex items-center gap-2">
+
+            <!-- StartTime (from activityForm) -->
+            <div class="flex items-center gap-2" [formGroup]="activityForm">
               <span>🕒</span>
               <ng-container *ngIf="!isEditing; else editStart">
-                <span>{{ a.startTime || a.scheduledTime }}</span>
+                <span>{{ activity.startTime || activity.scheduledTime }}</span>
               </ng-container>
               <ng-template #editStart>
                 <input
                   type="text"
-                  [(ngModel)]="a.startTime"
+                  formControlName="startTime"
                   class="w-28 rounded-md border border-white/50 bg-black/30 px-2 py-1 text-xs"
                 />
               </ng-template>
@@ -145,161 +172,125 @@
     <section class="grid lg:grid-cols-3 gap-6">
       <!-- Main content -->
       <div class="lg:col-span-2 space-y-6">
-        <div class="border-2 border-[#DDD6FE] rounded-2xl bg-white p-6 space-y-3">
+        <!-- About -->
+        <div class="border-2 border-[#DDD6FE] rounded-2xl bg-white p-6 space-y-3" [formGroup]="activityForm">
           <h2 class="text-2xl text-[#2D1B4E] mb-2">About this activity</h2>
           <ng-container *ngIf="!isEditing; else editDescription">
-            <p class="text-lg text-[#6B5B8C] leading-relaxed">
-              {{ a.description }}
-            </p>
+            <p class="text-lg text-[#6B5B8C] leading-relaxed">{{ activity.description }}</p>
           </ng-container>
           <ng-template #editDescription>
             <textarea
               rows="4"
-              [(ngModel)]="a.description"
+              formControlName="description"
               class="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm"
+              [class.border-red-500]="activityForm.get('description')?.invalid && activityForm.get('description')?.touched"
             ></textarea>
+            <div *ngIf="activityForm.get('description')?.invalid && activityForm.get('description')?.touched" class="text-red-500 text-xs">
+              <span *ngIf="activityForm.get('description')?.errors?.['required']">Description is required.</span>
+              <span *ngIf="activityForm.get('description')?.errors?.['minlength']">Minimum 10 characters.</span>
+              <span *ngIf="activityForm.get('description')?.errors?.['maxlength']">Maximum 1000 characters.</span>
+            </div>
           </ng-template>
         </div>
 
-        <div class="border-2 border-[#DDD6FE] rounded-2xl bg-white p-6 space-y-4">
-          <h2 class="text-2xl text-[#2D1B4E] mb-2">
-            Step-by-step instructions
-          </h2>
+        <!-- Instructions -->
+        <div class="border-2 border-[#DDD6FE] rounded-2xl bg-white p-6 space-y-4" [formGroup]="detailsForm">
+          <h2 class="text-2xl text-[#2D1B4E] mb-2">Step-by-step instructions</h2>
           <div class="flex items-center justify-between mb-2" *ngIf="isEditing">
-            <span class="text-xs text-[#6B5B8C]">
-              Add, remove, or reorder the steps for this activity
-            </span>
-            <button
-              type="button"
-              class="text-xs text-[#7C3AED] hover:text-[#6D28D9]"
-              (click)="addInstruction()"
-            >
-              + Add step
-            </button>
+            <span class="text-xs text-[#6B5B8C]">Add, remove, or reorder the steps for this activity</span>
+            <button type="button" class="text-xs text-[#7C3AED] hover:text-[#6D28D9]" (click)="addInstruction()">+ Add step</button>
           </div>
-          <ol class="space-y-3">
-            <li
-              *ngFor="let step of details?.instructions || []; index as i; trackBy: trackByIndex"
-              class="flex gap-4 items-start"
-            >
-              <span
-                class="flex-shrink-0 w-8 h-8 rounded-full bg-[#7C3AED] text-white flex items-center justify-center font-medium"
-              >
-                {{ i + 1 }}
-              </span>
-              <ng-container *ngIf="!isEditing; else editStep">
-                <span class="text-[#2D1B4E] text-base leading-relaxed">
-                  {{ step }}
-                </span>
-              </ng-container>
-              <ng-template #editStep>
-                <div class="flex-1 flex gap-2 items-start">
-                 <textarea
-  rows="2"
-  [ngModel]="details!.instructions[i]"
-  (ngModelChange)="updateInstruction(i, $event)"
-  class="flex-1 rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm"
-></textarea>
-                  <button
-                    type="button"
-                    class="text-xs text-rose-600 px-1"
-                    (click)="removeInstruction(i)"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </ng-template>
+          <ol class="space-y-3" formArrayName="instructions">
+            <li *ngFor="let instr of instructions.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i">
+              <div class="flex gap-4 items-start">
+                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-[#7C3AED] text-white flex items-center justify-center font-medium">{{ i + 1 }}</span>
+                <ng-container *ngIf="!isEditing; else editStep">
+                  <span class="text-[#2D1B4E] text-base leading-relaxed">{{ instr.get('value')?.value }}</span>
+                </ng-container>
+                <ng-template #editStep>
+                  <div class="flex-1 flex gap-2 items-start">
+                    <textarea
+                      rows="2"
+                      formControlName="value"
+                      class="flex-1 rounded-xl border border-[#E5E7EB] px-3 py-2 text-sm"
+                      [class.border-red-500]="instructions.at(i).invalid && instructions.at(i).touched"
+                    ></textarea>
+                    <button type="button" class="text-xs text-rose-600 px-1" (click)="removeInstruction(i)">✕</button>
+                  </div>
+                </ng-template>
+              </div>
+              <div *ngIf="isEditing && instructions.at(i).invalid && instructions.at(i).touched" class="text-red-500 text-xs ml-12">
+                Instruction cannot be empty.
+              </div>
             </li>
           </ol>
         </div>
 
-        <div class="border-2 border-[#DDD6FE] rounded-2xl bg-white p-6 space-y-3">
+        <!-- Benefits -->
+        <div class="border-2 border-[#DDD6FE] rounded-2xl bg-white p-6 space-y-3" [formGroup]="detailsForm">
           <h2 class="text-2xl text-[#2D1B4E] mb-2">Benefits</h2>
           <div class="flex items-center justify-between mb-2" *ngIf="isEditing">
-            <span class="text-xs text-[#6B5B8C]">
-              List the expected benefits for this activity
-            </span>
-            <button
-              type="button"
-              class="text-xs text-[#7C3AED] hover:text-[#6D28D9]"
-              (click)="addBenefit()"
-            >
-              + Add benefit
-            </button>
+            <span class="text-xs text-[#6B5B8C]">List the expected benefits for this activity</span>
+            <button type="button" class="text-xs text-[#7C3AED] hover:text-[#6D28D9]" (click)="addBenefit()">+ Add benefit</button>
           </div>
-          <ul class="space-y-2">
-            <li
-              *ngFor="let benefit of details?.benefits || []; index as i; trackBy: trackByIndex"
-              class="flex items-start gap-2 text-[#2D1B4E]"
-            >
-              <span class="mt-0.5">✅</span>
-              <ng-container *ngIf="!isEditing; else editBenefit">
-                <span>{{ benefit }}</span>
-              </ng-container>
-              <ng-template #editBenefit>
-                <div class="flex-1 flex gap-2 items-start">
-                  <input
-  type="text"
-  [ngModel]="details!.benefits[i]"
-  (ngModelChange)="updateBenefit(i, $event)"
-  class="flex-1 rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-sm"
-/>
-                  <button
-                    type="button"
-                    class="text-xs text-rose-600 px-1"
-                    (click)="removeBenefit(i)"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </ng-template>
+          <ul class="space-y-2" formArrayName="benefits">
+            <li *ngFor="let ben of benefits.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i">
+              <div class="flex items-start gap-2">
+                <span class="mt-0.5">✅</span>
+                <ng-container *ngIf="!isEditing; else editBenefit">
+                  <span>{{ ben.get('value')?.value }}</span>
+                </ng-container>
+                <ng-template #editBenefit>
+                  <div class="flex-1 flex gap-2 items-start">
+                    <input
+                      type="text"
+                      formControlName="value"
+                      class="flex-1 rounded-xl border border-[#E5E7EB] px-3 py-1.5 text-sm"
+                      [class.border-red-500]="benefits.at(i).invalid && benefits.at(i).touched"
+                    />
+                    <button type="button" class="text-xs text-rose-600 px-1" (click)="removeBenefit(i)">✕</button>
+                  </div>
+                </ng-template>
+              </div>
+              <div *ngIf="isEditing && benefits.at(i).invalid && benefits.at(i).touched" class="text-red-500 text-xs ml-8">
+                Benefit cannot be empty.
+              </div>
             </li>
           </ul>
         </div>
 
+        <!-- Precautions -->
         <div
           *ngIf="details?.precautions?.length || isEditing"
           class="border-2 border-orange-200 rounded-2xl bg-orange-50 p-6 space-y-3"
+          [formGroup]="detailsForm"
         >
           <div class="flex items-center justify-between">
-            <h2 class="text-xl text-orange-900 flex items-center gap-2">
-              ⚠️ Precautions
-            </h2>
-            <button
-              *ngIf="isEditing"
-              type="button"
-              class="text-xs text-orange-800"
-              (click)="addPrecaution()"
-            >
-              + Add precaution
-            </button>
+            <h2 class="text-xl text-orange-900 flex items-center gap-2">⚠️ Precautions</h2>
+            <button *ngIf="isEditing" type="button" class="text-xs text-orange-800" (click)="addPrecaution()">+ Add precaution</button>
           </div>
-          <ul class="space-y-2 text-orange-800">
-            <li
-              *ngFor="let p of details?.precautions || []; index as i; trackBy: trackByIndex"
-              class="flex gap-2 items-start"
-            >
-              <span>•</span>
-              <ng-container *ngIf="!isEditing; else editPrecaution">
-                <span>{{ p }}</span>
-              </ng-container>
-              <ng-template #editPrecaution>
-                <div class="flex-1 flex gap-2 items-start">
-                  <input
-  type="text"
-  [ngModel]="details!.precautions[i]"
-  (ngModelChange)="updatePrecaution(i, $event)"
-  class="flex-1 rounded-lg border border-orange-200 px-3 py-1 text-sm bg-orange-50"
-/>
-                  <button
-                    type="button"
-                    class="text-xs text-orange-800 px-1"
-                    (click)="removePrecaution(i)"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </ng-template>
+          <ul class="space-y-2 text-orange-800" formArrayName="precautions">
+            <li *ngFor="let pre of precautions.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i">
+              <div class="flex gap-2 items-start">
+                <span>•</span>
+                <ng-container *ngIf="!isEditing; else editPrecaution">
+                  <span>{{ pre.get('value')?.value }}</span>
+                </ng-container>
+                <ng-template #editPrecaution>
+                  <div class="flex-1 flex gap-2 items-start">
+                    <input
+                      type="text"
+                      formControlName="value"
+                      class="flex-1 rounded-lg border border-orange-200 px-3 py-1 text-sm bg-orange-50"
+                      [class.border-red-500]="precautions.at(i).invalid && precautions.at(i).touched"
+                    />
+                    <button type="button" class="text-xs text-orange-800 px-1" (click)="removePrecaution(i)">✕</button>
+                  </div>
+                </ng-template>
+              </div>
+              <div *ngIf="isEditing && precautions.at(i).invalid && precautions.at(i).touched" class="text-red-500 text-xs ml-5">
+                Precaution cannot be empty.
+              </div>
             </li>
           </ul>
         </div>
@@ -307,106 +298,104 @@
 
       <!-- Sidebar -->
       <div class="space-y-6">
+        <!-- Rating (read-only) -->
         <div class="border-2 border-[#DDD6FE] rounded-2xl bg-white p-6 space-y-4">
           <h3 class="text-xl text-[#2D1B4E]">Rate this activity</h3>
-
           <div class="flex justify-center gap-2 mb-2">
-            <button
-              *ngFor="let star of [1,2,3,4,5]"
-              type="button"
-              class="text-2xl focus:outline-none"
-            >
-              <span
-                [ngClass]="star <= Math.round(a.rating) ? 'text-yellow-400' : 'text-gray-300'"
-              >
-                ★
-              </span>
+            <button *ngFor="let star of [1,2,3,4,5]" type="button" class="text-2xl focus:outline-none">
+              <span [ngClass]="star <= Math.round(activity.rating) ? 'text-yellow-400' : 'text-gray-300'">★</span>
             </button>
           </div>
-
           <div class="text-center text-sm text-[#6B5B8C] space-y-2">
             <div class="flex justify-center items-baseline gap-1">
-              <ng-container *ngIf="!isEditing; else editRating">
-                <span class="text-3xl font-bold text-[#2D1B4E]">
-                  {{ a.rating | number : '1.1-1' }}
-                </span>
-                <span class="text-sm text-[#6B5B8C]">/ 5</span>
-              </ng-container>
-              <ng-template #editRating>
-                <input
-                  type="number"
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  [(ngModel)]="a.rating"
-                  class="w-20 rounded-lg border border-[#E5E7EB] px-2 py-1 text-sm"
-                />
-              </ng-template>
+              <span class="text-3xl font-bold text-[#2D1B4E]">{{ activity.rating | number : '1.1-1' }}</span>
+              <span class="text-sm text-[#6B5B8C]">/ 5</span>
             </div>
-            <p class="text-xs text-[#6B5B8C]">
-              Based on
-              <ng-container *ngIf="!isEditing; else editTotalRatings">
-                {{ a.totalRatings }} rating{{ a.totalRatings !== 1 ? 's' : '' }}
-              </ng-container>
-              <ng-template #editTotalRatings>
-                <input
-                  type="number"
-                  min="0"
-                  [(ngModel)]="a.totalRatings"
-                  class="w-20 rounded-lg border border-[#E5E7EB] px-2 py-1 text-xs"
-                />
-                ratings
-              </ng-template>
-            </p>
+            <p class="text-xs text-[#6B5B8C]">Based on {{ activity.totalRatings }} rating{{ activity.totalRatings !== 1 ? 's' : '' }}</p>
           </div>
         </div>
 
+        <!-- Quick info (some editable) -->
         <div class="border-2 border-[#DDD6FE] rounded-2xl bg-white p-6 space-y-4">
           <h3 class="text-xl text-[#2D1B4E]">Quick information</h3>
 
           <div class="space-y-3 text-sm">
+            <!-- Duration (read-only here) -->
             <div class="bg-[#F3E8FF] rounded-lg p-3">
               <p class="text-xs text-[#6B5B8C]">Duration</p>
-              <p class="text-lg font-medium text-[#2D1B4E]">
-                {{ a.duration }} minutes
-              </p>
+              <p class="text-lg font-medium text-[#2D1B4E]">{{ activity.duration }} minutes</p>
             </div>
-            <div class="bg-[#F3E8FF] rounded-lg p-3">
-              <p class="text-xs text-[#6B5B8C]">Frequency</p>
-              <p class="text-lg font-medium text-[#2D1B4E]">
-                {{ details?.frequency }}
-              </p>
-            </div>
-            <div class="bg-[#F3E8FF] rounded-lg p-3">
-              <p class="text-xs text-[#6B5B8C]">Supervision</p>
-              <p class="text-sm font-medium text-[#2D1B4E]">
-                {{ details?.supervision }}
-              </p>
-            </div>
-            <div class="bg-[#F3E8FF] rounded-lg p-3">
-              <p class="text-xs text-[#6B5B8C]">Monitored by</p>
-              <ng-container *ngIf="!isEditing; else editMonitoredBy">
-                <p class="text-sm font-medium text-[#2D1B4E]">
-                  {{ a.monitoredBy }}
-                </p>
+
+            <!-- Frequency (editable) -->
+            <div class="bg-[#F3E8FF] rounded-lg p-3" [formGroup]="detailsForm">
+              <p class="text-xs text-[#6B5B8C]">Frequency *</p>
+              <ng-container *ngIf="!isEditing; else editFrequency">
+                <p class="text-lg font-medium text-[#2D1B4E]">{{ details?.frequency }}</p>
               </ng-container>
-              <ng-template #editMonitoredBy>
+              <ng-template #editFrequency>
                 <input
                   type="text"
-                  [(ngModel)]="a.monitoredBy"
+                  formControlName="frequency"
                   class="w-full mt-1 rounded-lg border border-[#E5E7EB] px-2 py-1 text-sm"
+                  [class.border-red-500]="detailsForm.get('frequency')?.invalid && detailsForm.get('frequency')?.touched"
                 />
+                <div *ngIf="detailsForm.get('frequency')?.invalid && detailsForm.get('frequency')?.touched" class="text-red-500 text-xs mt-1">
+                  Frequency is required.
+                </div>
               </ng-template>
             </div>
-            <div class="bg-[#F3E8FF] rounded-lg p-3">
-              <p class="text-xs text-[#6B5B8C] mb-1">Recommended stages</p>
+
+            <!-- Supervision (editable) -->
+            <div class="bg-[#F3E8FF] rounded-lg p-3" [formGroup]="detailsForm">
+              <p class="text-xs text-[#6B5B8C]">Supervision *</p>
+              <ng-container *ngIf="!isEditing; else editSupervision">
+                <p class="text-sm font-medium text-[#2D1B4E]">{{ details?.supervision }}</p>
+              </ng-container>
+              <ng-template #editSupervision>
+                <input
+                  type="text"
+                  formControlName="supervision"
+                  class="w-full mt-1 rounded-lg border border-[#E5E7EB] px-2 py-1 text-sm"
+                  [class.border-red-500]="detailsForm.get('supervision')?.invalid && detailsForm.get('supervision')?.touched"
+                />
+                <div *ngIf="detailsForm.get('supervision')?.invalid && detailsForm.get('supervision')?.touched" class="text-red-500 text-xs mt-1">
+                  Supervision is required.
+                </div>
+              </ng-template>
+            </div>
+
+            <!-- Monitored by (from activityForm) -->
+            <div class="bg-[#F3E8FF] rounded-lg p-3" [formGroup]="activityForm">
+              <p class="text-xs text-[#6B5B8C]">Monitored by</p>
+              <ng-container *ngIf="!isEditing; else editMonitoredBy">
+                <p class="text-sm font-medium text-[#2D1B4E]">{{ activity.monitoredBy }}</p>
+              </ng-container>
+              <ng-template #editMonitoredBy>
+                <input type="text" formControlName="monitoredBy" class="w-full mt-1 rounded-lg border border-[#E5E7EB] px-2 py-1 text-sm" />
+              </ng-template>
+            </div>
+
+            <!-- Recommended stages (editable) -->
+            <div class="bg-[#F3E8FF] rounded-lg p-3" [formGroup]="detailsForm">
+              <p class="text-xs text-[#6B5B8C] mb-1">Recommended stages *</p>
               <div class="flex flex-wrap gap-2">
-                <span
-                  *ngFor="let stage of details?.recommendedStage"
-                  class="inline-flex items-center rounded-full border px-3 py-1 text-xs"
+                <button
+                  *ngFor="let stage of stages"
+                  type="button"
+                  class="px-3 py-1 rounded-full text-xs border"
+                  [ngClass]="
+                    (detailsForm.get('recommendedStage')?.value || []).includes(stage)
+                      ? 'bg-[#7C3AED] border-[#7C3AED] text-white'
+                      : 'bg-white border-[#E5E7EB] text-[#4B5563]'
+                  "
+                  (click)="toggleStage(stage)"
+                  [disabled]="!isEditing"
                 >
-                  {{ stage }} stage
-                </span>
+                  {{ stage }}
+                </button>
+              </div>
+              <div *ngIf="isEditing && detailsForm.get('recommendedStage')?.invalid && detailsForm.get('recommendedStage')?.touched" class="text-red-500 text-xs mt-1">
+                At least one stage must be selected.
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { AuthService, User } from '../../pages/login/auth.service'; // adjust path if needed
+import { AuthService, User } from '../../pages/login/auth.service';
 
 interface NavItem {
   id: string;
@@ -89,7 +89,14 @@ export class NavigationComponent implements OnInit, OnDestroy {
   }
 
   navigate(route: string): void {
-    this.router.navigateByUrl(route);
+    // Protected routes that require authentication
+    const protectedRoutes = ['/activities', '/appointments', '/medical-folder', '/alerts', '/profile'];
+    
+    if (protectedRoutes.includes(route) && !this.user) {
+      this.router.navigateByUrl('/login');
+    } else {
+      this.router.navigateByUrl(route);
+    }
     this.isMobileMenuOpen = false;
   }
 
@@ -117,17 +124,25 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   handleNotificationClick(notification: Notification): void {
     this.markAsRead(notification.id);
-    if (notification.type === 'alert') this.navigate('/alerts');
-    else if (notification.type === 'appointment') this.navigate('/appointments');
+    if (notification.type === 'alert') {
+      this.navigate('/alerts');
+    } else if (notification.type === 'appointment') {
+      this.navigate('/appointments');
+    }
   }
 
   getSeverityClasses(severity?: string): string {
     switch (severity) {
-      case 'CRITICAL': return 'bg-[#C06C84] text-white';
-      case 'HIGH': return 'bg-[#B39DDB] text-white';
-      case 'MEDIUM': return 'bg-[#DCCEF9] text-[#7C3AED]';
-      case 'LOW': return 'bg-[#A8E6CF] text-[#22c55e]';
-      default: return '';
+      case 'CRITICAL':
+        return 'bg-[#C06C84] text-white';
+      case 'HIGH':
+        return 'bg-[#B39DDB] text-white';
+      case 'MEDIUM':
+        return 'bg-[#DCCEF9] text-[#7C3AED]';
+      case 'LOW':
+        return 'bg-[#A8E6CF] text-[#22c55e]';
+      default:
+        return '';
     }
   }
 
@@ -150,9 +165,6 @@ export class NavigationComponent implements OnInit, OnDestroy {
     this.navigate('/profile');
   }
 
-  /** =======================
-   *  Close dropdown when clicking outside
-   *  ======================= */
   @HostListener('document:click', ['$event.target'])
   onClickOutside(target: HTMLElement) {
     const dropdown = document.getElementById('profile-dropdown');

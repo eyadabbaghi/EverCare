@@ -1,7 +1,17 @@
 import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, FormArray, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { ActivityService, Activity, ActivityDetails, UpdateActivityRequest, UpdateActivityDetailsRequest } from '../../../../core/services/activity.service';
+
+// Custom validator: at least one stage selected
+function atLeastOneStage(control: AbstractControl): ValidationErrors | null {
+  const value = control.value;
+  if (!value || value.length === 0) {
+    return { atLeastOneStage: true };
+  }
+  return null;
+}
 
 @Component({
   selector: 'app-activity-details-admin',
@@ -14,12 +24,43 @@ export class ActivityDetailsAdminComponent implements OnInit {
   isEditing = false;
   Math = Math;
 
+  activityForm: FormGroup;
+  detailsForm: FormGroup;
+
+  stages: ('Early' | 'Moderate' | 'Advanced')[] = ['Early', 'Moderate', 'Advanced'];
+  difficultyLevels: ('Easy' | 'Moderate' | 'Challenging')[] = ['Easy', 'Moderate', 'Challenging'];
+  activityTypes = ['Relaxation', 'Cognitive', 'Physical', 'Social', 'Creative'];
+
   constructor(
+    private fb: FormBuilder,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private activityService: ActivityService,
     private toastr: ToastrService
-  ) {}
+  ) {
+    this.activityForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+      type: ['', Validators.required],
+      duration: [0, [Validators.required, Validators.min(1), Validators.max(480)]],
+      scheduledTime: [''],
+      description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(1000)]],
+      imageUrl: ['', [Validators.required, Validators.pattern('https?://.+')]],
+      doctorSuggested: [false],
+      location: [''],
+      startTime: [''],
+      monitoredBy: ['']
+    });
+
+    this.detailsForm = this.fb.group({
+      instructions: this.fb.array([]),
+      difficulty: ['', Validators.required],
+      recommendedStage: [[], atLeastOneStage],
+      frequency: ['', Validators.required],
+      supervision: ['', Validators.required],
+      benefits: this.fb.array([]),
+      precautions: this.fb.array([])
+    });
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -27,14 +68,24 @@ export class ActivityDetailsAdminComponent implements OnInit {
       this.router.navigate(['/admin/activities']);
       return;
     }
-
     this.loadActivity(id);
+  }
+
+  get instructions(): FormArray {
+    return this.detailsForm.get('instructions') as FormArray;
+  }
+  get benefits(): FormArray {
+    return this.detailsForm.get('benefits') as FormArray;
+  }
+  get precautions(): FormArray {
+    return this.detailsForm.get('precautions') as FormArray;
   }
 
   loadActivity(id: string): void {
     this.activityService.getActivityById(id).subscribe({
       next: (activity) => {
         this.activity = activity;
+        this.activityForm.patchValue(activity);
         this.loadDetails(id);
       },
       error: (err) => {
@@ -49,6 +100,27 @@ export class ActivityDetailsAdminComponent implements OnInit {
     this.activityService.getDetailsByActivityId(activityId).subscribe({
       next: (details) => {
         this.details = details.length > 0 ? details[0] : null;
+        if (this.details) {
+          this.detailsForm.patchValue({
+            difficulty: this.details.difficulty,
+            recommendedStage: this.details.recommendedStage,
+            frequency: this.details.frequency,
+            supervision: this.details.supervision
+          });
+          // Fill form arrays
+          this.instructions.clear();
+          this.details.instructions.forEach(instr => 
+            this.instructions.push(this.fb.group({ value: [instr, Validators.required] }))
+          );
+          this.benefits.clear();
+          this.details.benefits.forEach(ben => 
+            this.benefits.push(this.fb.group({ value: [ben, Validators.required] }))
+          );
+          this.precautions.clear();
+          (this.details.precautions || []).forEach(pre => 
+            this.precautions.push(this.fb.group({ value: [pre, Validators.required] }))
+          );
+        }
         this.isEditing = false;
       },
       error: (err) => console.error('Failed to load details', err)
@@ -60,67 +132,77 @@ export class ActivityDetailsAdminComponent implements OnInit {
   }
 
   addInstruction(): void {
-    if (!this.details) return;
-    this.details.instructions = [...this.details.instructions, ''];
+    this.instructions.push(this.fb.group({ value: ['', Validators.required] }));
   }
 
   removeInstruction(index: number): void {
-    if (!this.details) return;
-    this.details.instructions = this.details.instructions.filter((_, i) => i !== index);
+    this.instructions.removeAt(index);
   }
 
   addBenefit(): void {
-    if (!this.details) return;
-    this.details.benefits = [...this.details.benefits, ''];
+    this.benefits.push(this.fb.group({ value: ['', Validators.required] }));
   }
 
   removeBenefit(index: number): void {
-    if (!this.details) return;
-    this.details.benefits = this.details.benefits.filter((_, i) => i !== index);
+    this.benefits.removeAt(index);
   }
 
   addPrecaution(): void {
-    if (!this.details) return;
-    const current = this.details.precautions || [];
-    this.details.precautions = [...current, ''];
+    this.precautions.push(this.fb.group({ value: ['', Validators.required] }));
   }
 
   removePrecaution(index: number): void {
-    if (!this.details || !this.details.precautions) return;
-    this.details.precautions = this.details.precautions.filter((_, i) => i !== index);
+    this.precautions.removeAt(index);
+  }
+
+  toggleStage(stage: 'Early' | 'Moderate' | 'Advanced'): void {
+    const current = this.detailsForm.get('recommendedStage')?.value || [];
+    if (current.includes(stage)) {
+      this.detailsForm.patchValue({ recommendedStage: current.filter((s: string) => s !== stage) });
+    } else {
+      this.detailsForm.patchValue({ recommendedStage: [...current, stage] });
+    }
+    this.detailsForm.get('recommendedStage')?.markAsTouched();
   }
 
   save(): void {
     if (!this.activity) return;
 
+    if (this.activityForm.invalid || this.detailsForm.invalid) {
+      this.activityForm.markAllAsTouched();
+      this.detailsForm.markAllAsTouched();
+      this.toastr.warning('Please fix the errors in the form');
+      return;
+    }
+
+    const activityValue = this.activityForm.value;
+    const detailsValue = this.detailsForm.value;
+
     const activityUpdate: UpdateActivityRequest = {
-      name: this.activity.name,
-      type: this.activity.type,
-      duration: this.activity.duration,
-      scheduledTime: this.activity.scheduledTime,
-      description: this.activity.description,
-      imageUrl: this.activity.imageUrl,
-      doctorSuggested: this.activity.doctorSuggested,
-      location: this.activity.location,
-      startTime: this.activity.startTime,
-      monitoredBy: this.activity.monitoredBy,
+      name: activityValue.name,
+      type: activityValue.type,
+      duration: activityValue.duration,
+      scheduledTime: activityValue.scheduledTime,
+      description: activityValue.description,
+      imageUrl: activityValue.imageUrl,
+      doctorSuggested: activityValue.doctorSuggested,
+      location: activityValue.location,
+      startTime: activityValue.startTime,
+      monitoredBy: activityValue.monitoredBy,
     };
 
-    // Update activity first
     this.activityService.updateActivity(this.activity.id, activityUpdate).subscribe({
       next: (updatedActivity) => {
         this.activity = updatedActivity;
-
-        // Then update details if they exist
         if (this.details) {
           const detailsUpdate: UpdateActivityDetailsRequest = {
-            instructions: this.details.instructions.filter(s => s.trim().length > 0),
-            difficulty: this.details.difficulty,
-            recommendedStage: this.details.recommendedStage,
-            frequency: this.details.frequency,
-            supervision: this.details.supervision,
-            benefits: this.details.benefits.filter(s => s.trim().length > 0),
-            precautions: this.details.precautions?.filter(s => s.trim().length > 0),
+            instructions: detailsValue.instructions.map((g: any) => g.value).filter((s: string) => s.trim().length > 0),
+            difficulty: detailsValue.difficulty,
+            recommendedStage: detailsValue.recommendedStage,
+            frequency: detailsValue.frequency,
+            supervision: detailsValue.supervision,
+            benefits: detailsValue.benefits.map((g: any) => g.value).filter((s: string) => s.trim().length > 0),
+            precautions: detailsValue.precautions.map((g: any) => g.value).filter((s: string) => s.trim().length > 0),
           };
           this.activityService.updateDetails(this.details.id, detailsUpdate).subscribe({
             next: (updatedDetails) => {
@@ -135,7 +217,6 @@ export class ActivityDetailsAdminComponent implements OnInit {
             }
           });
         } else {
-          // No details, maybe create? For simplicity, just finish
           this.isEditing = false;
           this.toastr.success('Activity updated');
         }
@@ -167,24 +248,6 @@ export class ActivityDetailsAdminComponent implements OnInit {
   }
 
   trackByIndex(index: number, item: any): number {
-  return index;
-}
-
-updateInstruction(index: number, value: string): void {
-  if (this.details && this.details.instructions) {
-    this.details.instructions[index] = value;
+    return index;
   }
-}
-
-updateBenefit(index: number, value: string): void {
-  if (this.details && this.details.benefits) {
-    this.details.benefits[index] = value;
-  }
-}
-
-updatePrecaution(index: number, value: string): void {
-  if (this.details && this.details.precautions) {
-    this.details.precautions[index] = value;
-  }
-}
 }
