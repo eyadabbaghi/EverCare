@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
 
 import { FrontOfficeRoutingModule } from './front-office-routing.module';
 import { HomeComponent } from './pages/home/home.component';
@@ -27,6 +27,8 @@ import { AlzheimersAssessmentComponent } from './ui/alzheimers-assessment/alzhei
 import { ProfileComponent } from './pages/profile/profile.component';
 import { LucideAngularModule } from 'lucide-angular';
 import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
+
 
 @NgModule({
   declarations: [
@@ -53,6 +55,7 @@ import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
     ProfileComponent,
     NewUserFlowComponent,
   ],
+
   imports: [
     CommonModule,
     FormsModule,
@@ -60,6 +63,9 @@ import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
     SharedModule,
     FrontOfficeRoutingModule,
     LucideAngularModule,
+    CommonModule,
+    FrontOfficeRoutingModule,
+
   ],
   exports: [
     NavigationComponent,

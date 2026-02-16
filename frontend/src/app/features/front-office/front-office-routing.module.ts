@@ -7,6 +7,7 @@ import { ActivityDetailsComponent } from './pages/activity-details/activity-deta
 import { AlertsComponent } from './pages/alerts/alerts.component';
 import { FrontOfficeLayoutComponent } from '../../layouts/front-office-layout/front-office-layout.component';
 import { ProfileComponent } from './pages/profile/profile.component';
+import {AppointmentsPageComponent} from '../appointments/pages/appointments-page/appointments-page.component';
 
 const routes: Routes = [
   {
@@ -19,6 +20,7 @@ const routes: Routes = [
       { path: 'activities/:id', component: ActivityDetailsComponent },
       { path: 'alerts', component: AlertsComponent },
       { path: 'profile', component: ProfileComponent },
+      {path: 'appointments', component:AppointmentsPageComponent },
     ],
   },
 ];

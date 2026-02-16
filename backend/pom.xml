@@ -5,7 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
 
-    <groupId>com.yourteam</groupId>
+    <groupId>com.Brainiacs</groupId>
+
     <artifactId>microservices-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -25,6 +26,11 @@
     <!-- MUST match your folder names exactly -->
     <modules>
         <module>appointment-service</module>
+        <module>Dailyme-service</module>
+        <module>Eureka-service</module>
+        <module>ApiGateway</module>
+
+
         <module>Activities</module>
         <module>Alerts</module>
         <module>User</module>
@@ -64,11 +70,13 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.32</version> <!-- Latest stable -->
             <scope>provided</scope>
+
         </dependency>
 
 

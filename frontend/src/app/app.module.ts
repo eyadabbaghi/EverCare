@@ -1,8 +1,5 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http'; // added HTTP_INTERCEPTORS
-import { ReactiveFormsModule } from '@angular/forms';
-
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CoreModule } from './core/core.module';
@@ -21,11 +18,19 @@ import { AppointmentsModule } from './features/appointments/appointments.module'
 import { LucideAngularModule, Heart, Mail, Lock, User, Chrome } from 'lucide-angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
+import {ReactiveFormsModule} from '@angular/forms';
+import {RouterModule} from '@angular/router';
 
 // Import the interceptor
-import { AuthInterceptor } from './features/front-office/pages/login/auth.interceptor'; // adjust path if needed
+import { AuthInterceptor } from './features/front-office/pages/login/auth.interceptor';
+import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
+import { MedicalRecordListComponent } from './features/medical-record/pages/medical-record-list/medical-record-list.component';
+import { MedicalRecordCardComponent } from './features/medical-record/components/medical-record-card/medical-record-card.component';
+import { MedicalRecordFormComponent } from './features/medical-record/pages/medical-record-form/medical-record-form.component';
+import { MedicalRecordDetailsComponent } from './features/medical-record/pages/medical-record-details/medical-record-details.component'; // adjust path if needed
 
 @NgModule({
+
   declarations: [
     AppComponent,
     BackOfficeLayoutComponent,
@@ -35,6 +40,18 @@ import { AuthInterceptor } from './features/front-office/pages/login/auth.interc
     FrontOfficeLayoutComponent,
     HeaderComponent,
     HeroComponent,
+    AppComponent,
+    BackOfficeLayoutComponent,
+    SidebarComponent,
+    NavbarComponent,
+    FooterComponent,
+    FrontOfficeLayoutComponent,
+    HeaderComponent,
+    HeroComponent,
+    MedicalRecordListComponent,
+    MedicalRecordCardComponent,
+    MedicalRecordFormComponent,
+    MedicalRecordDetailsComponent
   ],
   imports: [
     BrowserModule,
@@ -55,7 +72,9 @@ import { AuthInterceptor } from './features/front-office/pages/login/auth.interc
       progressBar: true,
       closeButton: true
     }),
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    RouterModule
+
   ],
   providers: [
     provideClientHydration(),

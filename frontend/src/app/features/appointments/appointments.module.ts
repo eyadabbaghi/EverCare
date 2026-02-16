@@ -2,6 +2,9 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { AppointmentsRoutingModule } from './appointments-routing.module';
+import { AppointmentsPageComponent } from './pages/appointments-page/appointments-page.component';
+import {FormsModule} from '@angular/forms';
+
 import { AppointmentListComponent } from './pages/appointment-list/appointment-list.component';
 import { AppointmentFormComponent } from './pages/appointment-form/appointment-form.component';
 import { AppointmentDetailsComponent } from './pages/appointment-details/appointment-details.component';
@@ -16,6 +19,8 @@ import { ReminderSettingsComponent } from './components/reminder-settings/remind
 
 @NgModule({
   declarations: [
+    AppointmentsPageComponent,
+
     AppointmentListComponent,
     AppointmentFormComponent,
     AppointmentDetailsComponent,
@@ -29,6 +34,8 @@ import { ReminderSettingsComponent } from './components/reminder-settings/remind
   ],
   imports: [
     CommonModule,
+    AppointmentsRoutingModule,
+    FormsModule,
     AppointmentsRoutingModule
   ]
 })

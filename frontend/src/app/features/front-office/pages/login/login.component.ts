@@ -1,3 +1,4 @@
+// login.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -27,17 +28,20 @@ export function strongPasswordValidator(): ValidatorFn {
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
+  // États
   isLoading = false;
   activeTab: 'login' | 'register' = 'login';
 
+  // Forms
   loginForm!: FormGroup;
   registerForm!: FormGroup;
 
+  // Select options - Fixed duplicate values
   userRoles = [
     { value: 'PATIENT', label: 'Patient' },
     { value: 'CAREGIVER', label: 'Caregiver' },
     { value: 'DOCTOR', label: 'Doctor' },
-    
+    { value: 'ADMIN', label: 'Administrator' }
   ];
 
   constructor(
@@ -52,11 +56,13 @@ export class LoginComponent implements OnInit {
   }
 
   private initForms(): void {
+    // Login form
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
     });
 
+    // Register form - Fixed duplicate role field
     this.registerForm = this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -65,6 +71,7 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  // Handlers
   onTabChange(tab: 'login' | 'register'): void {
     this.activeTab = tab;
   }
@@ -96,32 +103,32 @@ export class LoginComponent implements OnInit {
   }
 
   handleRegister(): void {
-  if (this.registerForm.invalid) {
-    this.registerForm.markAllAsTouched();
-    return;
-  }
-
-  this.isLoading = true;
-  const userData: RegisterRequest = this.registerForm.value;
-
-  this.authService.register(userData).subscribe({
-    next: () => {
-      // Set flag for new user flow
-      localStorage.setItem('showWelcomeFlow', 'true');
-      this.toastr.success('Registration successful!', 'Welcome');
-      this.router.navigate(['/']);
-    },
-    error: (err) => {
-      console.error('Registration error', err);
-      const errorMsg = err.error?.message || 'Registration failed. Please try again.';
-      this.toastr.error(errorMsg, 'Error');
-      this.isLoading = false;
-    },
-    complete: () => {
-      this.isLoading = false;
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
     }
-  });
-}
+
+    this.isLoading = true;
+    const userData: RegisterRequest = this.registerForm.value;
+
+    this.authService.register(userData).subscribe({
+      next: () => {
+        // Set flag for new user flow
+        localStorage.setItem('showWelcomeFlow', 'true');
+        this.toastr.success('Registration successful!', 'Welcome');
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        console.error('Registration error', err);
+        const errorMsg = err.error?.message || 'Registration failed. Please try again.';
+        this.toastr.error(errorMsg, 'Error');
+        this.isLoading = false;
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
+    });
+  }
 
   handleGoogleLogin(): void {
     this.toastr.info('Google login not implemented yet', 'Info');
@@ -136,6 +143,7 @@ export class LoginComponent implements OnInit {
       /\d/.test(password),
       /[!@#$%^&*()]/.test(password)
     ];
+
     const strengthLevel = checks.filter(Boolean).length;
 
     let message = '';
@@ -182,6 +190,7 @@ export class LoginComponent implements OnInit {
     return password && /[!@#$%^&*()]/.test(password);
   }
 
+  // Getters pour les formulaires
   get lf() { return this.loginForm.controls; }
   get rf() { return this.registerForm.controls; }
 }
