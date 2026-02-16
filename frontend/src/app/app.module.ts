@@ -23,7 +23,8 @@ import {RouterModule} from '@angular/router';
 
 // Import the interceptor
 import { AuthInterceptor } from './features/front-office/pages/login/auth.interceptor';
-import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http'; // adjust path if needed
+import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
+import {CommonModule} from '@angular/common'; // adjust path if needed
 
 @NgModule({
 
@@ -43,7 +44,8 @@ import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http'; // adj
     FooterComponent,
     FrontOfficeLayoutComponent,
     HeaderComponent,
-    HeroComponent
+    HeroComponent,
+
   ],
   imports: [
     BrowserModule,
@@ -55,7 +57,7 @@ import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http'; // adj
     BackOfficeModule,
     FrontOfficeModule,
     AppointmentsModule,
-    LucideAngularModule.pick({ Heart, Mail, Lock, User, Chrome }),
+    LucideAngularModule.pick({ Heart, Mail, Lock, User }),
     BrowserAnimationsModule,
     ToastrModule.forRoot({
       timeOut: 3000,
@@ -65,7 +67,8 @@ import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http'; // adj
       closeButton: true
     }),
     ReactiveFormsModule,
-    RouterModule
+    RouterModule,
+    CommonModule,
 
   ],
   providers: [
