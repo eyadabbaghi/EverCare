@@ -1,0 +1,46 @@
+package everCare.appointments.services;
+
+import everCare.appointments.entities.Prescription;
+import everCare.appointments.entities.User;
+import java.time.LocalDate;
+import java.util.List;
+
+public interface PrescriptionService {
+
+    // ========== CREATE ==========
+    Prescription createPrescription(Prescription prescription);
+    Prescription createPrescriptionFromConsultation(String patientId, String doctorId,
+                                                    String appointmentId, String medicamentId,
+                                                    LocalDate dateDebut, LocalDate dateFin,
+                                                    String posologie);
+
+    // ========== READ ==========
+    List<Prescription> getAllPrescriptions();
+    Prescription getPrescriptionById(String id);
+    List<Prescription> getPrescriptionsByPatient(String patientId);
+    List<Prescription> getPrescriptionsByDoctor(String doctorId);
+    List<Prescription> getPrescriptionsByMedicament(String medicamentId);
+    List<Prescription> getActivePrescriptionsByPatient(String patientId);
+    List<Prescription> getPrescriptionsByStatus(String statut);
+    List<Prescription> getPrescriptionsByDateRange(LocalDate start, LocalDate end);
+    List<Prescription> getExpiringPrescriptions(int days);
+    List<Prescription> getPrescriptionsByAppointment(String appointmentId);
+
+    // ========== UPDATE ==========
+    Prescription updatePrescription(String id, Prescription prescriptionDetails);
+    Prescription terminatePrescription(String id);
+    Prescription renewPrescription(String id, LocalDate newDateFin);
+    Prescription updatePosologie(String id, String posologie);
+    Prescription updateResumeSimple(String id, String resume);
+    Prescription addNotes(String id, String notes);
+    Prescription generatePdf(String id);
+
+    // ========== DELETE ==========
+    void deletePrescription(String id);
+    void deletePrescriptionsByPatient(String patientId);
+
+    // ========== BUSINESS LOGIC ==========
+    boolean isPrescriptionActive(String id);
+    List<Prescription> getTodayPrescriptions(String patientId);
+    long countByMedicament(String medicamentId);
+}
