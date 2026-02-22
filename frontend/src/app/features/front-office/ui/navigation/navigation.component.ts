@@ -71,9 +71,22 @@ export class NavigationComponent implements OnInit, OnDestroy {
   constructor(private readonly router: Router, private authService: AuthService) {}
 
   ngOnInit(): void {
-    this.userSub = this.authService.currentUser$.subscribe((user: User | null) => {
-      this.user = user;
+    // Subscribe to user changes
+    this.userSub = this.authService.currentUser$.subscribe({
+      next: (user) => {
+        this.user = user;
+        console.log('Navigation user updated:', user);
+      },
+      error: (err) => console.error('User subscription error:', err)
     });
+
+    // If token exists but user is null (e.g., after page refresh), try to fetch user
+    if (this.authService.getToken() && !this.user) {
+      this.authService.fetchCurrentUser().subscribe({
+        next: (user) => console.log('Fetched user on navigation init:', user),
+        error: (err) => console.error('Failed to fetch user on init', err)
+      });
+    }
   }
 
   ngOnDestroy(): void {
@@ -90,7 +103,10 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   navigate(route: string): void {
     // Protected routes that require authentication
-    const protectedRoutes = ['/activities', '/appointments', '/medical-folder', '/alerts', '/profile'];
+    const protectedRoutes = [
+      '/activities', '/appointments', '/medical-folder', '/alerts',
+      '/profile', '/messages', '/daily', '/blog'
+    ];
     
     if (protectedRoutes.includes(route) && !this.user) {
       this.router.navigateByUrl('/login');
@@ -98,6 +114,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
       this.router.navigateByUrl(route);
     }
     this.isMobileMenuOpen = false;
+    this.profileOpen = false;
   }
 
   toggleMobileMenu(): void {
@@ -158,6 +175,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
     this.profileOpen = false;
+    // Logout already navigates to login
   }
 
   goToProfile(): void {

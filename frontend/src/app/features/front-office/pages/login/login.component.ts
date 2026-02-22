@@ -1,4 +1,5 @@
-import { Component, NgZone, OnInit } from '@angular/core';
+import { Component, NgZone, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
@@ -51,18 +52,21 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private toastr: ToastrService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    @Inject(PLATFORM_ID) private platformId: Object   // <-- add this
   ) {}
 
   ngOnInit(): void {
     this.initForms();
 
-    // Define the global callback for Google Sign‑In
-    window.handleGoogleResponse = (response) => {
-      this.ngZone.run(() => {
-        this.handleGoogleCredential(response.credential);
-      });
-    };
+    // Only define the global callback in the browser (not during SSR)
+    if (isPlatformBrowser(this.platformId)) {
+      window.handleGoogleResponse = (response) => {
+        this.ngZone.run(() => {
+          this.handleGoogleCredential(response.credential);
+        });
+      };
+    }
   }
 
   private initForms(): void {
@@ -120,6 +124,7 @@ export class LoginComponent implements OnInit {
 
     this.authService.register(userData).subscribe({
       next: () => {
+        // Registration and automatic login succeeded – now navigate
         this.router.navigate(['/setup-profile'], {
           state: {
             name: userData.name,
@@ -142,8 +147,6 @@ export class LoginComponent implements OnInit {
 
   // Called when the user clicks the custom Google button (if you keep it)
   handleGoogleLogin(): void {
-    // This method is kept for compatibility with the existing SVG button.
-    // You can either remove it or use it to programmatically trigger the Google sign‑in.
     this.toastr.info('Please use the official Google Sign‑In button', 'Info');
   }
 
