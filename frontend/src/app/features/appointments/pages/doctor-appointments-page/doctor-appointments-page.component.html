@@ -1,0 +1,49 @@
+<div class="min-h-screen bg-gradient-to-br from-[#FAF8FC] to-[#F3E8FF] p-4 md:p-8">
+  <div class="max-w-7xl mx-auto flex flex-col gap-5" >
+
+    <!-- Header Component -->
+    <app-doctor-header [doctor]="currentDoctor"></app-doctor-header>
+
+    <!-- Stats Cards Component -->
+    <app-stats-cards [stats]="doctorStats"></app-stats-cards>
+
+    <!-- Today's Schedule Component -->
+    <app-today-schedule
+      [appointments]="todayAppointments"
+      (onCardClick)="viewAppointmentDetails($event)"
+      (onStart)="startConsultation($event)"
+      (onJoin)="joinVideoCall($event)"
+      (onViewProfile)="viewPatientProfile($event)">
+    </app-today-schedule>
+
+    <!-- Upcoming Appointments Component -->
+    <app-upcoming-appointments
+      [appointments]="upcomingAppointments"
+      (onCardClick)="viewAppointmentDetails($event)"
+      (onDateSelected)="onDateSelected($event)">
+    </app-upcoming-appointments>
+
+    <!-- Recent Patients Table Component -->
+    <app-recent-patients-table
+      [patients]="recentPatients"
+      (onViewHistory)="viewPatientHistory($event)">
+    </app-recent-patients-table>
+
+    <!-- Appointment Details Modal -->
+    <app-appointment-details-modal
+      *ngIf="selectedAppointment"
+      [appointment]="selectedAppointment"
+      [patientBirthDate]="selectedPatientBirthDate"
+      [patientAge]="selectedPatientAge"
+      [patientAlzheimerStage]="selectedPatientStage"
+      [emergencyContact]="selectedPatientEmergency"
+      [previousVisits]="selectedPatientVisits"
+      (onClose)="closeDetailsDialog()"
+      (onStart)="startConsultation($event)"
+      (onPrescribe)="openPrescription()"
+      (onEditNotes)="enableNotesEditing()"
+      (onNotesChange)="updateNotes($event)">
+    </app-appointment-details-modal>
+
+  </div>
+</div>

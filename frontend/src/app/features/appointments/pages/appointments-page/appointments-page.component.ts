@@ -1,150 +1,222 @@
-// appointments.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import {Appointment} from '../../models/appointment';
+import { Appointment } from '../../models/appointment';
+import { User } from '../../models/user';
+import { ConsultationType } from '../../models/consultation-type';
+
 
 @Component({
-  selector: 'app-appointments',
+  selector: 'app-appointments-page',
+
   templateUrl: './appointments-page.component.html',
 })
 export class AppointmentsPageComponent implements OnInit {
-  currentDate: Date = new Date(2026, 1, 1); // February 2026
+  currentPatient: User = {
+    userId: "pat-001",
+    name: "Jeanne Moreau",
+    email: "jeanne.moreau@email.com",
+    role: "PATIENT",
+    phone: "06 12 34 56 78",
+    profilePicture: "https://randomuser.me/api/portraits/women/1.jpg",
+    alzheimerStage: "MODERE",
+    requiresCaregiver: true
+  };
+
+  currentDate: Date = new Date(2026, 1, 1);
   isAddDialogOpen = false;
+  selectedAppointment: Appointment | null = null;
 
-  appointments: Appointment[] = [
-    {
-      id: '1',
-      title: 'General Checkup',
-      doctor: 'Dr. Sarah Wilson',
-      date: '2026-02-05',
-      time: '10:00 AM',
-      type: 'in-person',
-      location: 'EverCare Medical Center, Room 203',
-      status: 'upcoming',
-      notes: 'Bring recent blood test results'
-    },
-    {
-      id: '2',
-      title: 'Neurology Consultation',
-      doctor: 'Dr. Michael Chen',
-      date: '2026-02-12',
-      time: '2:30 PM',
-      type: 'video',
-      location: 'Video Call',
-      status: 'upcoming',
-      notes: 'Review memory assessment results'
-    },
-    {
-      id: '3',
-      title: 'Physical Therapy',
-      doctor: 'Therapist Emma Davis',
-      date: '2026-02-08',
-      time: '11:00 AM',
-      type: 'in-person',
-      location: 'Rehabilitation Center, Building B',
-      status: 'upcoming'
-    },
-    {
-      id: '4',
-      title: 'Medication Review',
-      doctor: 'Dr. Sarah Wilson',
-      date: '2026-01-28',
-      time: '9:00 AM',
-      type: 'in-person',
-      location: 'EverCare Medical Center, Room 203',
-      status: 'completed'
-    }
-  ];
+  // Data
+  doctors: User[] = [ /* ... */ ];
+  myCaregivers: User[] = [ /* ... */ ];
+  consultationTypes: ConsultationType[] = [ /* ... */ ];
+  appointments: Appointment[] = [ /* ... */ ];
 
-  newAppointment: Omit<Appointment, 'id' | 'status'> = {
-    title: '',
-    doctor: '',
+  // Filters
+  filters = { status: '', doctorId: '' };
+
+  // New appointment form
+  newAppointment: any = {
+    doctorId: '',
+    consultationTypeId: '',
     date: '',
     time: '',
-    type: 'in-person',
-    location: '',
+    caregiverId: '',
+    caregiverPresence: 'NONE',
     notes: ''
   };
 
-  daysInMonth: number = 0;
-  startingDayOfWeek: number = 0;
-  monthName: string = '';
+  availableSlots: string[] = [];
 
   ngOnInit(): void {
-    this.updateCalendar();
+    // Initialization logic
   }
 
-  updateCalendar(): void {
-    const year = this.currentDate.getFullYear();
-    const month = this.currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+  // ========== GETTERS ==========
 
-    this.daysInMonth = lastDay.getDate();
-    this.startingDayOfWeek = firstDay.getDay();
-    this.monthName = this.currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+  get myAppointments(): Appointment[] {
+    return this.appointments.filter(apt => apt.patientId === this.currentPatient.userId);
   }
 
-  previousMonth(): void {
-    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1);
-    this.updateCalendar();
-  }
-
-  nextMonth(): void {
-    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1);
-    this.updateCalendar();
-  }
-
-  getAppointmentsForDate(date: string): Appointment[] {
-    return this.appointments.filter(apt => apt.date === date && apt.status === 'upcoming');
+  get filteredAppointments(): Appointment[] {
+    return this.myAppointments.filter(apt => {
+      let matches = true;
+      if (this.filters.status && apt.status !== this.filters.status) matches = false;
+      if (this.filters.doctorId && apt.doctorId !== this.filters.doctorId) matches = false;
+      return matches;
+    });
   }
 
   get upcomingAppointments(): Appointment[] {
-    return this.appointments
-      .filter(apt => apt.status === 'upcoming')
-      .sort((a, b) =>
-        new Date(a.date + ' ' + a.time).getTime() - new Date(b.date + ' ' + b.time).getTime()
-      );
+    const now = new Date();
+    return this.filteredAppointments
+      .filter(apt =>
+        (apt.status === 'SCHEDULED' || apt.status === 'CONFIRMED_BY_PATIENT') &&
+        apt.startDateTime > now
+      )
+      .sort((a, b) => a.startDateTime.getTime() - b.startDateTime.getTime());
   }
 
-  addAppointment(): void {
-    const appointment: Appointment = {
-      id: Date.now().toString(),
-      ...this.newAppointment,
-      status: 'upcoming'
-    };
+  get pastAppointments(): Appointment[] {
+    const now = new Date();
+    return this.filteredAppointments
+      .filter(apt => apt.startDateTime < now || apt.status === 'COMPLETED' || apt.status === 'CANCELLED')
+      .sort((a, b) => b.startDateTime.getTime() - a.startDateTime.getTime());
+  }
 
-    this.appointments = [...this.appointments, appointment];
+  // ========== EVENT HANDLERS ==========
 
-    // Ici vous appelleriez votre service de toast
-    // this.toastService.success('Appointment scheduled successfully!');
+  onFiltersChanged(filters: { status: string; doctorId: string }): void {
+    this.filters = filters;
+  }
 
+  onMonthChanged(newDate: Date): void {
+    this.currentDate = newDate;
+  }
+
+  onDateSelected(date: string): void {
+    console.log('Date selected:', date);
+    // Could scroll to appointments on that date
+  }
+
+  onDoctorSelected(doctorId: string): void {
+    this.loadAvailableSlots(doctorId, this.newAppointment.date);
+  }
+
+  // ========== APPOINTMENT ACTIONS ==========
+
+  viewAppointmentDetails(appointment: Appointment): void {
+    this.selectedAppointment = appointment;
+  }
+
+  closeDetailsDialog(): void {
+    this.selectedAppointment = null;
+  }
+
+  handleAppointmentAction(appointment: Appointment): void {
+    if (appointment.status === 'SCHEDULED') {
+      this.confirmAppointment(appointment.appointmentId);
+    } else {
+      this.joinVideoCall(appointment.videoLink);
+    }
+  }
+
+  confirmAppointment(appointmentId: string): void {
+    const appointment = this.appointments.find(a => a.appointmentId === appointmentId);
+    if (appointment) {
+      appointment.status = 'CONFIRMED_BY_PATIENT';
+      appointment.confirmationDatePatient = new Date();
+      appointment.updatedAt = new Date();
+    }
+  }
+
+  cancelAppointment(appointmentId: string): void {
+    if (confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?')) {
+      const appointment = this.appointments.find(a => a.appointmentId === appointmentId);
+      if (appointment) {
+        appointment.status = 'CANCELLED';
+        appointment.updatedAt = new Date();
+        this.closeDetailsDialog();
+      }
+    }
+  }
+
+  joinVideoCall(videoLink: string|undefined): void {
+    window.open(videoLink, '_blank');
+  }
+
+  // ========== ADD APPOINTMENT ==========
+
+  openAddDialog(): void {
+    this.isAddDialogOpen = true;
+    this.resetNewAppointment();
+  }
+
+  closeAddDialog(): void {
     this.isAddDialogOpen = false;
     this.resetNewAppointment();
   }
 
   resetNewAppointment(): void {
     this.newAppointment = {
-      title: '',
-      doctor: '',
+      doctorId: '',
+      consultationTypeId: '',
       date: '',
       time: '',
-      type: 'in-person',
-      location: '',
+      caregiverId: '',
+      caregiverPresence: 'NONE',
       notes: ''
     };
+    this.availableSlots = [];
   }
 
-  isFormValid(): boolean {
-    return !!(this.newAppointment.title &&
-      this.newAppointment.doctor &&
-      this.newAppointment.date &&
-      this.newAppointment.time);
+  loadAvailableSlots(doctorId: string, date: string): void {
+    if (!doctorId || !date) {
+      this.availableSlots = [];
+      return;
+    }
+
+    // Mock available slots
+    const slotsByDoctor: { [key: string]: string[] } = {
+      'doc-001': ['09:00', '09:30', '10:00', '11:00', '14:00', '15:00'],
+      'doc-002': ['09:00', '10:00', '11:00', '14:30', '15:30', '16:00'],
+      'doc-003': ['09:30', '10:30', '14:00', '15:00', '16:00']
+    };
+
+    this.availableSlots = slotsByDoctor[doctorId] || [];
   }
 
-  isToday(dateStr: string): boolean {
-    const today = '2026-02-01'; // Pour l'exemple
-    return dateStr === today;
+  addAppointment(formData: any): void {
+    const selectedDoctor = this.doctors.find(d => d.userId === formData.doctorId);
+    const selectedType = this.consultationTypes.find(t => t.typeId === formData.consultationTypeId);
+    const selectedCaregiver = this.myCaregivers.find(c => c.userId === formData.caregiverId);
+
+    const startDateTime = new Date(formData.date + 'T' + formData.time);
+    const endDateTime = new Date(startDateTime.getTime() + (selectedType?.alzheimerDurationMinutes || 20) * 60000);
+
+    const newAppt: Appointment = {
+      appointmentId: 'apt-' + Math.random().toString(36).substr(2, 9),
+      patientId: this.currentPatient.userId,
+      patientName: this.currentPatient.name,
+      patientPhoto: this.currentPatient.profilePicture,
+      doctorId: formData.doctorId,
+      doctorName: selectedDoctor?.name || '',
+      doctorPhoto: selectedDoctor?.profilePicture,
+      caregiverId: formData.caregiverId || undefined,
+      caregiverName: selectedCaregiver?.name,
+      consultationTypeId: formData.consultationTypeId,
+      consultationTypeName: selectedType?.name || '',
+      startDateTime: startDateTime,
+      endDateTime: endDateTime,
+      status: 'SCHEDULED',
+      caregiverPresence: formData.caregiverPresence,
+      videoLink: `https://consult.evercare.com/room/${formData.doctorId}-${this.currentPatient.userId}`,
+      isRecurring: false,
+      doctorNotes: formData.notes,
+      createdAt: new Date()
+    };
+
+    this.appointments.push(newAppt);
+    this.closeAddDialog();
   }
 }

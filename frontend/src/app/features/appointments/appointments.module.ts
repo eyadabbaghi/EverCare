@@ -4,33 +4,47 @@ import { CommonModule } from '@angular/common';
 import { AppointmentsRoutingModule } from './appointments-routing.module';
 import { AppointmentsPageComponent } from './pages/appointments-page/appointments-page.component';
 import {FormsModule} from '@angular/forms';
-
-import { AppointmentListComponent } from './pages/appointment-list/appointment-list.component';
-import { AppointmentFormComponent } from './pages/appointment-form/appointment-form.component';
-import { AppointmentDetailsComponent } from './pages/appointment-details/appointment-details.component';
-import { CalendarViewComponent } from './pages/calendar-view/calendar-view.component';
-import { BookingComponent } from './pages/booking/booking.component';
 import { CalendarComponent } from './components/calendar/calendar.component';
-import { TimeSlotsComponent } from './components/time-slots/time-slots.component';
+import { AppointmentFiltersComponent } from './components/appointment-filters/appointment-filters.component';
 import { AppointmentCardComponent } from './components/appointment-card/appointment-card.component';
-import { StatusBadgeComponent } from './components/status-badge/status-badge.component';
-import { ReminderSettingsComponent } from './components/reminder-settings/reminder-settings.component';
+import { AppointmentListComponent } from './components/appointment-list/appointment-list.component';
+import { AppointmentDetailsComponent } from './components/appointment-details/appointment-details.component';
+import { AppointmentFormComponent } from './components/appointment-form/appointment-form.component';
+import { DoctorHeaderComponent } from './components/doctor-header/doctor-header.component';
+import { StatsCardsComponent } from './components/stats-cards/stats-cards.component';
+import { TimelineAppointmentCardComponent } from './components/timeline-appointment-card/timeline-appointment-card.component';
+import { TodayScheduleComponent } from './components/today-schedule/today-schedule.component';
+import { AppointmentListItemComponent } from './components/appointment-list-item/appointment-list-item.component';
+import { UpcomingAppointmentsComponent } from './components/upcoming-appointments/upcoming-appointments.component';
+import { RecentPatientsTableComponent } from './components/recent-patients-table/recent-patients-table.component';
+import { AppointmentDetailsModalComponent } from './components/appointment-details-modal/appointment-details-modal.component';
+import { DoctorAppointmentsPageComponent } from './pages/doctor-appointments-page/doctor-appointments-page.component';
+import {DoctorCalendarComponent} from './components/doctor-calendar/doctor-calendar.component';
+
+
+
 
 
 @NgModule({
   declarations: [
     AppointmentsPageComponent,
-
-    AppointmentListComponent,
-    AppointmentFormComponent,
-    AppointmentDetailsComponent,
-    CalendarViewComponent,
-    BookingComponent,
     CalendarComponent,
-    TimeSlotsComponent,
+    AppointmentFiltersComponent,
     AppointmentCardComponent,
-    StatusBadgeComponent,
-    ReminderSettingsComponent
+    AppointmentListComponent,
+    AppointmentDetailsComponent,
+    AppointmentFormComponent,
+    DoctorHeaderComponent,
+    StatsCardsComponent,
+    TimelineAppointmentCardComponent,
+    TodayScheduleComponent,
+    AppointmentListItemComponent,
+    UpcomingAppointmentsComponent,
+    RecentPatientsTableComponent,
+    AppointmentDetailsModalComponent,
+    DoctorAppointmentsPageComponent,
+   DoctorCalendarComponent
+
   ],
   imports: [
     CommonModule,
