@@ -1,39 +1,37 @@
 package tn.esprit.user.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import tn.esprit.user.dto.*;
+import tn.esprit.user.dto.RegisterRequest;
+import tn.esprit.user.dto.UserDto;
 import tn.esprit.user.entity.User;
 import tn.esprit.user.entity.UserRole;
-import tn.esprit.user.security.JwtUtil;
 import tn.esprit.user.service.UserService;
 
-import java.security.Principal;
 import java.util.Map;
-
-import tn.esprit.user.security.GoogleTokenVerifier;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // For frontend during development
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final UserService userService;
-    private final GoogleTokenVerifier googleTokenVerifier;
-    private final JwtUtil jwtUtil;                // <-- field added
 
     @PostMapping("/register")
-    public AuthResponse register(@RequestBody RegisterRequest request) {
-        return userService.register(request);
+    public ResponseEntity<Map<String, String>> register(@RequestBody RegisterRequest request) {
+        userService.register(request);
+        return ResponseEntity.ok(Map.of("message", "User registered successfully"));
     }
 
-    @PostMapping("/login")
-    public AuthResponse login(@RequestBody LoginRequest request) {
-        return userService.login(request);
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        UserDto userDto = userService.getUserDtoByEmail(email);
+        return ResponseEntity.ok(userDto);
     }
 
     private UserDto mapToDto(User user) {
@@ -56,6 +54,7 @@ public class AuthController {
         dto.setWorkplaceType(user.getWorkplaceType());
         dto.setWorkplaceName(user.getWorkplaceName());
         dto.setDoctorEmail(user.getDoctorEmail());
+
         // Relationships
         if (user.getRole() == UserRole.PATIENT) {
             dto.setCaregiverEmails(user.getCaregivers().stream()
@@ -64,47 +63,6 @@ public class AuthController {
             dto.setPatientEmails(user.getPatients().stream()
                     .map(User::getEmail).collect(java.util.stream.Collectors.toSet()));
         }
-
         return dto;
-    }
-    @GetMapping("/me")
-    public ResponseEntity<UserDto> getCurrentUser(Principal principal) {
-        System.out.println("=== /me controller ===");
-        System.out.println("Principal: " + principal);
-        System.out.println("Principal name: " + (principal != null ? principal.getName() : "null"));
-
-        String email = principal.getName();
-        System.out.println("Email from principal: " + email);
-
-        User user = userService.findByEmail(email);
-        System.out.println("User found: " + user.getEmail());
-
-        UserDto dto = mapToDto(user);
-        System.out.println("DTO created: " + dto);
-
-        ResponseEntity<UserDto> response = ResponseEntity.ok(dto);
-        System.out.println("Returning response: " + response);
-        return response;
-    }
-
-    @PostMapping("/google")
-    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
-        String idToken = request.get("idToken");
-        try {
-            GoogleIdToken.Payload payload = googleTokenVerifier.verifyToken(idToken);
-            if (payload == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Google token");
-            }
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
-            String pictureUrl = (String) payload.get("picture");
-
-            User user = userService.findOrCreateGoogleUser(email, name, pictureUrl);
-            String jwt = jwtUtil.generateToken(user.getEmail());
-            return ResponseEntity.ok(new AuthResponse(jwt));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Google login failed");
-        }
     }
 }

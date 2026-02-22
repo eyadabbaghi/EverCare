@@ -1,77 +1,87 @@
 package tn.esprit.user.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.user.dto.*;
 import tn.esprit.user.entity.User;
 import tn.esprit.user.entity.UserRole;
 import tn.esprit.user.repository.UserRepository;
-import tn.esprit.user.security.JwtUtil;
 
 import java.util.List;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final KeycloakAdminClient keycloakAdminClient;
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
-        // Check if email already exists
+    public void register(RegisterRequest request) {
+        // Check if email already exists locally
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
-        // Validate password strength
-        if (!isStrongPassword(request.getPassword())) {
-            throw new RuntimeException("Password must be at least 8 characters long, contain an uppercase letter, a digit, and a special character (!@#$%^&*)");
-        }
+        // Create user in Keycloak
+        String keycloakId = keycloakAdminClient.createUser(request);
 
-        // Create user (only basic info)
+        // Create local user
         User user = User.builder()
+                .keycloakId(keycloakId)
                 .name(request.getName())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
-                .isVerified(true) // For simplicity, auto-verify
+                .isVerified(true)
                 .build();
 
         userRepository.save(user);
-
-        // Generate token
-        String token = jwtUtil.generateToken(user.getEmail());
-
-        return new AuthResponse(token);
-    }
-
-    public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid password");
-        }
-
-        String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token);
-    }
-
-    private boolean isStrongPassword(String password) {
-        return password.length() >= 8 &&
-                password.matches(".*[A-Z].*") &&
-                password.matches(".*[0-9].*") &&
-                password.matches(".*[!@#$%^&*()].*");
     }
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getUserDtoByEmail(String email) {
+        User user = findByEmail(email);
+        return mapToDto(user);
+    }
+
+    private UserDto mapToDto(User user) {
+        UserDto dto = new UserDto();
+        dto.setUserId(user.getUserId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        dto.setPhone(user.getPhone());
+        dto.setVerified(user.isVerified());
+        dto.setCreatedAt(user.getCreatedAt());
+        dto.setDateOfBirth(user.getDateOfBirth());
+        dto.setEmergencyContact(user.getEmergencyContact());
+        dto.setProfilePicture(user.getProfilePicture());
+
+        // Doctor fields
+        dto.setYearsExperience(user.getYearsExperience());
+        dto.setSpecialization(user.getSpecialization());
+        dto.setMedicalLicense(user.getMedicalLicense());
+        dto.setWorkplaceType(user.getWorkplaceType());
+        dto.setWorkplaceName(user.getWorkplaceName());
+        dto.setDoctorEmail(user.getDoctorEmail());
+
+        // Relationships – these will now be loaded inside the transaction
+        if (user.getRole() == UserRole.PATIENT) {
+            dto.setCaregiverEmails(user.getCaregivers().stream()
+                    .map(User::getEmail).collect(Collectors.toSet()));
+        } else if (user.getRole() == UserRole.CAREGIVER) {
+            dto.setPatientEmails(user.getPatients().stream()
+                    .map(User::getEmail).collect(Collectors.toSet()));
+        }
+
+        return dto;
     }
 
     @Transactional
@@ -120,7 +130,7 @@ public class UserService {
             }
         }
 
-        // Handle patient-caregiver relationship (toggle)
+        // Patient-caregiver relationships
         if (request.getConnectedEmail() != null && !request.getConnectedEmail().isEmpty()) {
             User connectedUser = findByEmail(request.getConnectedEmail());
 
@@ -129,11 +139,9 @@ public class UserService {
                     throw new RuntimeException("Connected email must belong to a caregiver");
                 }
                 if (user.getCaregivers().contains(connectedUser)) {
-                    // Remove relationship
                     user.getCaregivers().remove(connectedUser);
                     connectedUser.getPatients().remove(user);
                 } else {
-                    // Add relationship
                     user.getCaregivers().add(connectedUser);
                     connectedUser.getPatients().add(user);
                 }
@@ -143,11 +151,9 @@ public class UserService {
                     throw new RuntimeException("Connected email must belong to a patient");
                 }
                 if (user.getPatients().contains(connectedUser)) {
-                    // Remove
                     user.getPatients().remove(connectedUser);
                     connectedUser.getCaregivers().remove(user);
                 } else {
-                    // Add
                     user.getPatients().add(connectedUser);
                     connectedUser.getCaregivers().add(user);
                 }
@@ -157,18 +163,16 @@ public class UserService {
             }
         }
 
-        // Handle doctor assignment for patients (toggle)
+        // Doctor assignment for patients
         if (user.getRole() == UserRole.PATIENT) {
             if (request.getDoctorEmail() != null) {
                 if (request.getDoctorEmail().isEmpty()) {
-                    // Explicit removal with empty string
                     user.setDoctorEmail(null);
                 } else {
                     User doctor = findByEmail(request.getDoctorEmail());
                     if (doctor.getRole() != UserRole.DOCTOR) {
                         throw new RuntimeException("Doctor email must belong to a doctor");
                     }
-                    // If it's the same as current, remove; otherwise set
                     if (request.getDoctorEmail().equals(user.getDoctorEmail())) {
                         user.setDoctorEmail(null);
                     } else {
@@ -180,26 +184,19 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
     @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = findByEmail(email);
-
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
-        }
-
-        if (!isStrongPassword(request.getNewPassword())) {
-            throw new RuntimeException("New password must be at least 8 characters long, contain an uppercase letter, a digit, and a special character (!@#$%^&*)");
-        }
-
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
+        keycloakAdminClient.changePassword(user.getKeycloakId(), request);
     }
 
     @Transactional
     public void deleteUser(String email) {
         User user = findByEmail(email);
-        // Remove all relationships before deleting
+        if (user.getKeycloakId() != null) {
+            keycloakAdminClient.deleteUser(user.getKeycloakId());
+        }
         if (user.getRole() == UserRole.PATIENT) {
             for (User caregiver : user.getCaregivers()) {
                 caregiver.getPatients().remove(user);
@@ -242,7 +239,9 @@ public class UserService {
     public void deleteUserById(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        // Similar cleanup as deleteUser
+        if (user.getKeycloakId() != null) {
+            keycloakAdminClient.deleteUser(user.getKeycloakId());
+        }
         if (user.getRole() == UserRole.PATIENT) {
             for (User caregiver : user.getCaregivers()) {
                 caregiver.getPatients().remove(user);
@@ -259,20 +258,5 @@ public class UserService {
 
     public List<User> searchUsersByRole(String query, UserRole role) {
         return userRepository.searchByRoleAndQuery(query, role);
-    }
-
-    @Transactional
-    public User findOrCreateGoogleUser(String email, String name, String pictureUrl) {
-        return userRepository.findByEmail(email).orElseGet(() -> {
-            User user = User.builder()
-                    .name(name)
-                    .email(email)
-                    .password(passwordEncoder.encode(UUID.randomUUID().toString())) // random password
-                    .role(UserRole.PATIENT) // default role; you may later let them choose
-                    .isVerified(true)
-                    .profilePicture(pictureUrl)
-                    .build();
-            return userRepository.save(user);
-        });
     }
 }
