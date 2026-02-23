@@ -36,6 +36,7 @@
         <module>User</module>
         <module>ApiGateway</module>
         <module>Eureka-service</module>
+        <module>communication-service</module>
         <!-- Comment these out until you actually create the folders -->
         <!-- <module>gateway-service</module> -->
         <!-- <module>auth-service</module> -->
