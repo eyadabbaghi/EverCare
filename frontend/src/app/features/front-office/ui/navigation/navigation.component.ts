@@ -1,7 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { AuthService, User } from '../../pages/login/auth.service'; // adjust path if needed
+import { AuthService, User } from '../../pages/login/auth.service';
 
 interface NavItem {
   id: string;
@@ -71,9 +71,22 @@ export class NavigationComponent implements OnInit, OnDestroy {
   constructor(private readonly router: Router, private authService: AuthService) {}
 
   ngOnInit(): void {
-    this.userSub = this.authService.currentUser$.subscribe((user: User | null) => {
-      this.user = user;
+    // Subscribe to user changes
+    this.userSub = this.authService.currentUser$.subscribe({
+      next: (user) => {
+        this.user = user;
+        console.log('Navigation user updated:', user);
+      },
+      error: (err) => console.error('User subscription error:', err)
     });
+
+    // If token exists but user is null (e.g., after page refresh), try to fetch user
+    if (this.authService.getToken() && !this.user) {
+      this.authService.fetchCurrentUser().subscribe({
+        next: (user) => console.log('Fetched user on navigation init:', user),
+        error: (err) => console.error('Failed to fetch user on init', err)
+      });
+    }
   }
 
   ngOnDestroy(): void {
@@ -89,8 +102,19 @@ export class NavigationComponent implements OnInit, OnDestroy {
   }
 
   navigate(route: string): void {
-    this.router.navigateByUrl(route);
+    // Protected routes that require authentication
+    const protectedRoutes = [
+      '/activities', '/appointments', '/medical-folder', '/alerts',
+      '/profile', '/messages', '/daily', '/blog'
+    ];
+    
+    if (protectedRoutes.includes(route) && !this.user) {
+      this.router.navigateByUrl('/login');
+    } else {
+      this.router.navigateByUrl(route);
+    }
     this.isMobileMenuOpen = false;
+    this.profileOpen = false;
   }
 
   toggleMobileMenu(): void {
@@ -117,17 +141,25 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   handleNotificationClick(notification: Notification): void {
     this.markAsRead(notification.id);
-    if (notification.type === 'alert') this.navigate('/alerts');
-    else if (notification.type === 'appointment') this.navigate('/appointments');
+    if (notification.type === 'alert') {
+      this.navigate('/alerts');
+    } else if (notification.type === 'appointment') {
+      this.navigate('/appointments');
+    }
   }
 
   getSeverityClasses(severity?: string): string {
     switch (severity) {
-      case 'CRITICAL': return 'bg-[#C06C84] text-white';
-      case 'HIGH': return 'bg-[#B39DDB] text-white';
-      case 'MEDIUM': return 'bg-[#DCCEF9] text-[#7C3AED]';
-      case 'LOW': return 'bg-[#A8E6CF] text-[#22c55e]';
-      default: return '';
+      case 'CRITICAL':
+        return 'bg-[#C06C84] text-white';
+      case 'HIGH':
+        return 'bg-[#B39DDB] text-white';
+      case 'MEDIUM':
+        return 'bg-[#DCCEF9] text-[#7C3AED]';
+      case 'LOW':
+        return 'bg-[#A8E6CF] text-[#22c55e]';
+      default:
+        return '';
     }
   }
 
@@ -143,6 +175,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
     this.profileOpen = false;
+    // Logout already navigates to login
   }
 
   goToProfile(): void {
@@ -150,9 +183,6 @@ export class NavigationComponent implements OnInit, OnDestroy {
     this.navigate('/profile');
   }
 
-  /** =======================
-   *  Close dropdown when clicking outside
-   *  ======================= */
   @HostListener('document:click', ['$event.target'])
   onClickOutside(target: HTMLElement) {
     const dropdown = document.getElementById('profile-dropdown');

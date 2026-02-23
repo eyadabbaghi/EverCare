@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-
+import { FormsModule, ReactiveFormsModule } from '@angular/forms'; 
 import { BackOfficeRoutingModule } from './back-office-routing.module';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { UsersComponent } from './pages/users/users.component';
@@ -35,6 +34,7 @@ import { ActivityDetailsAdminComponent } from './pages/activity-details-admin/ac
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     BackOfficeRoutingModule
   ]
 })

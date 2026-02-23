@@ -36,3 +36,20 @@ public class ApiGatewayApplication {
 
 
 }
+    @Bean
+    public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+        return builder.routes()
+                .route("appointment-service", r -> r
+                        .path("/api/appointments/**")
+                        .uri("lb://APPOINTMENT-SERVICE"))
+                .route("activities-service", r -> r
+                        .path("/EverCare/activities/**", "/EverCare/admin/activities/**")
+                        .uri("lb://ACTIVITIES-SERVICE"))
+                .build();
+    }
+
+
+
+
+
+}
