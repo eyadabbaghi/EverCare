@@ -16,35 +16,19 @@ public class ApiGatewayApplication {
         SpringApplication.run(ApiGatewayApplication.class, args);
     }
 
-    @Bean
-    public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
 
-        return builder.routes()
-                .route("appointment-service", r -> r
-                            .path("/api/appointments/**")
-                        .uri("lb://APPOINTMENT-SERVICE"))
-                .route("user-service", r -> r
-                        .path("/EverCare/admin/**",  // Pour lAdmin
-                                "/EverCare/auth/**",       // Pour lauth
-                                "/EverCare/users/**")      // Pour le user
-                        .uri("lb://USER-SERVICE"))
-                .build();
-    }
-
-
-
-
-
-}
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
                 .route("appointment-service", r -> r
-                        .path("/api/appointments/**")
+                        .path("/EverCare/appointments/**")
                         .uri("lb://APPOINTMENT-SERVICE"))
                 .route("activities-service", r -> r
                         .path("/EverCare/activities/**", "/EverCare/admin/activities/**")
                         .uri("lb://ACTIVITIES-SERVICE"))
+                .route("user-service", r -> r
+                        .path("/EverCare/admin/**", "/EverCare/auth/**,/EverCare/users/**,")
+                        .uri("lb://USER-SERVICE"))
                 .build();
     }
 

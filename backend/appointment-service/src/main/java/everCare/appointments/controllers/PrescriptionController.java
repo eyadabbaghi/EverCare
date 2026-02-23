@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/prescriptions")
+@RequestMapping("/prescriptions")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class PrescriptionController {

@@ -1,7 +1,5 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-
 import { FrontOfficeRoutingModule } from './front-office-routing.module';
 import { HomeComponent } from './pages/home/home.component';
 import { AboutComponent } from './pages/about/about.component';
@@ -28,7 +26,6 @@ import { ProfileComponent } from './pages/profile/profile.component';
 import { LucideAngularModule } from 'lucide-angular';
 import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-
 import { SetupProfileComponent } from './pages/setup-profile/setup-profile.component';
 
 // 👇 ADD THIS IMPORT
