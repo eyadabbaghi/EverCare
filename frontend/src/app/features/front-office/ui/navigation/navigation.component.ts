@@ -82,6 +82,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
     // If token exists but user is null (e.g., after page refresh), try to fetch user
     if (this.authService.getToken() && !this.user) {
+      console.log('Authentication token:', this.user);
       this.authService.fetchCurrentUser().subscribe({
         next: (user) => console.log('Fetched user on navigation init:', user),
         error: (err) => console.error('Failed to fetch user on init', err)
@@ -104,10 +105,10 @@ export class NavigationComponent implements OnInit, OnDestroy {
   navigate(route: string): void {
     // Protected routes that require authentication
     const protectedRoutes = [
-      '/activities', '/appointments', '/medical-folder', '/alerts',
-      '/profile', '/messages', '/daily', '/blog'
+      '/activities', '/medical-folder', '/alerts',
+      '/profile', '/messages', '/daily', '/blog','appointments',
     ];
-    
+
     if (protectedRoutes.includes(route) && !this.user) {
       this.router.navigateByUrl('/login');
     } else {
