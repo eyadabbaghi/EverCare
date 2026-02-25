@@ -37,6 +37,7 @@
               }
             ],
             "styles": [
+              "src/styles/_purple-theme.css",
               "src/styles.css"
             ],
             "scripts": [],
@@ -100,6 +101,7 @@
               }
             ],
             "styles": [
+              "src/styles/_purple-theme.css",
               "src/styles.css"
             ],
             "scripts": []

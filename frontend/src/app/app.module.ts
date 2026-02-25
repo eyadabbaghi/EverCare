@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http'; // added HTTP_INTERCEPTORS
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -23,7 +23,20 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
 
 // Import the interceptor
-import { AuthInterceptor } from './features/front-office/pages/login/auth.interceptor'; // adjust path if needed
+import { AuthInterceptor } from './features/front-office/pages/login/auth.interceptor';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { AddIncidentDialogComponent } from './add-incident-dialog/add-incident-dialog.component';
+import { AddAlertDialogComponent } from './add-alert-dialog/add-alert-dialog.component';
+
+// Angular Material imports
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatRadioModule } from '@angular/material/radio';
+import { IncidentDetailsDialogComponent } from './features/front-office/pages/alerts/incident-details-dialog.component';
 
 @NgModule({
   declarations: [
@@ -35,10 +48,15 @@ import { AuthInterceptor } from './features/front-office/pages/login/auth.interc
     FrontOfficeLayoutComponent,
     HeaderComponent,
     HeroComponent,
+    AddIncidentDialogComponent,
+    AddAlertDialogComponent,
+    IncidentDetailsDialogComponent // <-- add here
+
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
+    MatRadioModule,
     HttpClientModule,
     CoreModule,
     SharedModule,
@@ -55,11 +73,19 @@ import { AuthInterceptor } from './features/front-office/pages/login/auth.interc
       progressBar: true,
       closeButton: true
     }),
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    // Angular Material modules
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatCheckboxModule,
   ],
   providers: [
     provideClientHydration(),
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true } // Add this line
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    provideAnimationsAsync('noop')
   ],
   bootstrap: [AppComponent]
 })

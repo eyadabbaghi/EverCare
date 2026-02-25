@@ -70,11 +70,20 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   constructor(private readonly router: Router, private authService: AuthService) {}
 
-  ngOnInit(): void {
-    this.userSub = this.authService.currentUser$.subscribe((user: User | null) => {
-      this.user = user;
+ ngOnInit(): void {
+  this.userSub = this.authService.currentUser$.subscribe(user => {
+    this.user = user;
+  });
+
+  // 🔑 Restore session on refresh (CRITICAL)
+  if (this.authService.getToken()) {
+    this.authService.fetchCurrentUser().subscribe({
+      error: () => {
+        this.authService.logout();
+      }
     });
   }
+}
 
   ngOnDestroy(): void {
     if (this.userSub) this.userSub.unsubscribe();
@@ -90,7 +99,10 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   navigate(route: string): void {
     // Protected routes that require authentication
-    const protectedRoutes = ['/activities', '/appointments', '/medical-folder', '/alerts', '/profile'];
+    const protectedRoutes = [
+      '/activities', '/appointments', '/medical-folder', '/alerts',
+      '/profile', '/messages', '/daily', '/blog'
+    ];
     
     if (protectedRoutes.includes(route) && !this.user) {
       this.router.navigateByUrl('/login');
@@ -98,6 +110,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
       this.router.navigateByUrl(route);
     }
     this.isMobileMenuOpen = false;
+    this.profileOpen = false;
   }
 
   toggleMobileMenu(): void {
@@ -158,6 +171,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
   logout(): void {
     this.authService.logout();
     this.profileOpen = false;
+    // Logout already navigates to login
   }
 
   goToProfile(): void {

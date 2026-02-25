@@ -8,106 +8,100 @@
             {{ isDoctor ? 'Patient Alerts & Incidents' : 'Alerts & Incidents' }}
           </h1>
           <p class="text-sm text-[#6B5B8C]">
-            {{
-              isDoctor
-                ? 'Clinical overview and medical decision support.'
-                : isPatient
-                ? 'Stay informed about your safety and health.'
-                : 'Centralized safety monitoring and alert management.'
-            }}
+            {{ isDoctor ? 'Clinical overview and medical decision support.' : isPatient ? 'Stay informed about your safety and health.' : 'Centralized safety monitoring and alert management.' }}
           </p>
         </div>
 
         <div class="flex items-center gap-3">
-          <button
-            *ngIf="isPatient"
-            type="button"
-            class="px-4 py-2 rounded-full bg-[#C06C84] text-white text-sm font-medium shadow hover:bg-[#A85A70]"
-          >
-            <span class="mr-2">🚨</span>
-            Emergency SOS
+          <button *ngIf="isPatient" type="button" class="px-4 py-2 rounded-full bg-[#C06C84] text-white text-sm font-medium shadow hover:bg-[#A85A70]">
+            <span class="mr-2">🚨</span> Emergency SOS
           </button>
-          <!-- Always visible create-incident button -->
-          <button
-            type="button"
-            class="px-4 py-2 rounded-full bg-[#7C3AED] text-white text-sm font-medium shadow hover:bg-[#6D28D9]"
-            (click)="onCreateIncidentClick()"
-          >
-            <span class="mr-2">＋</span>
-            Report Incident
+          <!-- Create Incident button – visible for caregivers and patients -->
+          <button *ngIf="!isDoctor" type="button" class="px-4 py-2 rounded-full bg-[#7C3AED] text-white text-sm font-medium shadow hover:bg-[#6D28D9]" (click)="openCreateIncidentDialog()">
+            <span class="mr-2">＋</span> Report Incident
           </button>
         </div>
       </div>
     </section>
 
-    <!-- Stats -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div
-        class="alert-stat-card border border-[#C06C84] rounded-xl bg-red-50 p-4 flex items-center justify-between"
-      >
+    <!-- Statistics -->
+    <section class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      <!-- Total Alerts -->
+      <div class="border border-[#C4B5FD] rounded-xl bg-white p-4 flex items-center justify-between transition-all hover:shadow-lg hover:scale-105">
         <div>
-          <p class="text-xs text-[#6B5B8C]">Critical</p>
-          <p class="text-2xl font-bold text-[#C06C84]">
-            {{ stats.critical }}
-          </p>
+          <p class="text-xs text-[#6B5B8C]">Total Alerts</p>
+          <h3 class="text-2xl font-bold text-[#2D1B4E]">{{ stats.total }}</h3>
         </div>
-        <span class="text-[#C06C84] text-2xl">🚨</span>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-[#7C3AED]">
+          <path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <div
-        class="alert-stat-card border border-[#C4B5FD] rounded-xl bg-white p-4 flex items-center justify-between"
-      >
+
+      <!-- Active -->
+      <div class="border border-[#C06C84] rounded-xl bg-red-50 p-4 flex items-center justify-between transition-all hover:shadow-lg hover:scale-105">
         <div>
           <p class="text-xs text-[#6B5B8C]">Active</p>
-          <p class="text-2xl font-bold text-[#2D1B4E]">
-            {{ stats.active }}
-          </p>
+          <h3 class="text-2xl font-bold text-[#C06C84]">{{ stats.active }}</h3>
         </div>
-        <span class="text-[#7C3AED] text-2xl">🔔</span>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-[#C06C84]">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <div
-        class="alert-stat-card border border-[#C4B5FD] rounded-xl bg-white p-4 flex items-center justify-between"
-      >
+
+      <!-- Acknowledged -->
+      <div class="border border-[#F59E0B] rounded-xl bg-orange-50 p-4 flex items-center justify-between transition-all hover:shadow-lg hover:scale-105">
         <div>
-          <p class="text-xs text-[#6B5B8C]">Total</p>
-          <p class="text-2xl font-bold text-[#2D1B4E]">
-            {{ stats.total }}
-          </p>
+          <p class="text-xs text-[#6B5B8C]">Acknowledged</p>
+          <h3 class="text-2xl font-bold text-[#F59E0B]">{{ stats.acknowledged }}</h3>
         </div>
-        <span class="text-[#7C3AED] text-2xl">📊</span>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-[#F59E0B]">
+          <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <div
-        class="alert-stat-card border border-[#22c55e] rounded-xl bg-green-50 p-4 flex items-center justify-between"
-      >
+
+      <!-- Resolved -->
+      <div class="border border-[#22c55e] rounded-xl bg-green-50 p-4 flex items-center justify-between transition-all hover:shadow-lg hover:scale-105">
         <div>
           <p class="text-xs text-[#6B5B8C]">Resolved</p>
-          <p class="text-2xl font-bold text-[#22c55e]">
-            {{ stats.resolved }}
-          </p>
+          <h3 class="text-2xl font-bold text-[#22c55e]">{{ stats.resolved }}</h3>
         </div>
-        <span class="text-[#22c55e] text-2xl">✔</span>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-[#22c55e]">
+          <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <!-- Critical -->
+      <div class="border border-[#C06C84] rounded-xl bg-red-100 p-4 flex items-center justify-between transition-all hover:shadow-lg hover:scale-105">
+        <div>
+          <p class="text-xs text-[#6B5B8C]">Critical</p>
+          <h3 class="text-2xl font-bold text-[#C06C84]">{{ stats.critical }}</h3>
+        </div>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-[#C06C84]">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
     </section>
 
-    <!-- Filters -->
-    <section
-      class="border border-[#C4B5FD] bg-white rounded-xl p-4 grid grid-cols-1 md:grid-cols-5 gap-4 items-center"
-    >
+    <!-- Filters (unchanged) -->
+    <section class="rounded-xl p-4 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
       <div class="md:col-span-2">
-        <div class="relative">
-          <span class="absolute left-3 top-2.5 text-[#6B5B8C]">🔍</span>
+        <div class="relative group">
+          <span class="absolute left-3 top-2.5 text-[#7C3AED] transition-all duration-300 group-focus-within:scale-110">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
           <input
             type="text"
-            class="w-full pl-9 pr-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
             placeholder="Search incidents or patients..."
             [(ngModel)]="searchQuery"
+            class="search-input w-full pl-10 pr-3 py-2 rounded-full border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#C4B5FD] transition-all duration-300"
           />
         </div>
       </div>
 
-      <select
-        class="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-        [(ngModel)]="filterSeverity"
-      >
+      <select class="w-full px-3 py-2 rounded-full border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD] transition-all duration-300" [(ngModel)]="filterSeverity">
         <option value="all">All severities</option>
         <option value="CRITICAL">Critical</option>
         <option value="HIGH">High</option>
@@ -115,504 +109,271 @@
         <option value="LOW">Low</option>
       </select>
 
-      <select
-        class="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-        [(ngModel)]="filterType"
-      >
+      <select class="w-full px-3 py-2 rounded-full border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD] transition-all duration-300" [(ngModel)]="filterType">
         <option value="all">All types</option>
         <option value="Medical">Medical</option>
         <option value="Behavioral">Behavioral</option>
         <option value="Safety">Safety</option>
       </select>
 
-      <select
-        class="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-        [(ngModel)]="filterStatus"
-      >
+      <select class="w-full px-3 py-2 rounded-full border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD] transition-all duration-300" [(ngModel)]="filterStatus">
         <option value="all">All statuses</option>
-        <option value="active">Active</option>
-        <option value="acknowledged">Acknowledged</option>
-        <option value="resolved">Resolved</option>
+        <option value="SENT">Active</option>
+        <option value="ACKNOWLEDGED">Acknowledged</option>
+        <option value="RESOLVED">Resolved</option>
       </select>
 
-      <select
-        *ngIf="isDoctor"
-        class="w-full px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-        [(ngModel)]="selectedPatientFilter"
-      >
-        <option value="all">All patients</option>
-        <option value="P-001">John Anderson</option>
-        <option value="P-002">Mary Wilson</option>
-        <option value="P-003">Robert Chen</option>
-        <option value="P-004">Emma Davis</option>
-      </select>
+      <!-- Patient filter dropdown removed for doctors – replaced by patient cards -->
+      <select *ngIf="isDoctor" class="w-full px-3 py-2 rounded-full border border-[#E5E7EB] text-sm focus:outline-none focus:ring-2 focus:ring-[#C4B5FD] transition-all duration-300" [(ngModel)]="selectedPatientFilter" style="display: none;"></select>
     </section>
 
-    <!-- Inline incident form -->
-    <section *ngIf="showIncidentForm" class="border border-[#C4B5FD] bg-white rounded-xl p-4">
-      <h2 class="text-lg font-semibold text-[#2D1B4E] mb-4">
-        {{ editingIncident ? 'Edit Incident' : 'Report New Incident' }}
-      </h2>
-      <div class="space-y-4">
-        <div>
-          <label class="text-sm font-medium text-[#374151]">Incident title *</label>
-          <input
-            type="text"
-            class="w-full mt-1 px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-            [(ngModel)]="newIncident.title"
-          />
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="text-sm font-medium text-[#374151]">Type *</label>
-            <select
-              class="w-full mt-1 px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-              [(ngModel)]="newIncident.type"
-            >
-              <option value="Medical">Medical</option>
-              <option value="Behavioral">Behavioral</option>
-              <option value="Safety">Safety</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-sm font-medium text-[#374151]">Severity *</label>
-            <select
-              class="w-full mt-1 px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-              [(ngModel)]="newIncident.severity"
-            >
-              <option value="LOW">LOW</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="HIGH">HIGH</option>
-              <option value="CRITICAL">CRITICAL</option>
-            </select>
-          </div>
-        </div>
-
-        <div *ngIf="!editingIncident">
-          <label class="text-sm font-medium text-[#374151]">Patient *</label>
-          <select
-            class="w-full mt-1 px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-            [(ngModel)]="newIncident.patientId"
-          >
-            <option value="">Select patient</option>
-            <option value="P-001">John Anderson (78 yrs)</option>
-            <option value="P-002">Mary Wilson (82 yrs)</option>
-            <option value="P-003">Robert Chen (75 yrs)</option>
-            <option value="P-004">Emma Davis (80 yrs)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="text-sm font-medium text-[#374151]">Description *</label>
-          <textarea
-            rows="3"
-            class="w-full mt-1 px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-            [(ngModel)]="newIncident.description"
-          ></textarea>
-        </div>
-
-        <div>
-          <label class="text-sm font-medium text-[#374151]">Location</label>
-          <input
-            type="text"
-            class="w-full mt-1 px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-            [(ngModel)]="newIncident.location"
-          />
-        </div>
-
-        <div class="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            class="px-4 py-2 rounded-full border border-[#E5E7EB] text-sm text-[#374151]"
-            (click)="showIncidentForm = false; editingIncident = null"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 rounded-full bg-[#7C3AED] text-white text-sm font-medium"
-            [disabled]="
-              !newIncident.title ||
-              !newIncident.description ||
-              (!editingIncident && !newIncident.patientId)
-            "
-            (click)="editingIncident ? saveIncident() : createIncident()"
-          >
-            {{ editingIncident ? 'Save Incident' : 'Create Incident' }}
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Main layout: incidents (with pagination) + details / alerts -->
+    <!-- Main layout -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Incidents list -->
-      <div class="lg:col-span-2 space-y-4">
-        <ng-container *ngIf="paginatedIncidents.length; else noIncidents">
-          <div
-            *ngFor="let incident of paginatedIncidents"
-            class="alert-row border-2 rounded-2xl bg-white p-5 cursor-pointer hover:shadow-lg transition"
-            (click)="selectIncident(incident)"
-          >
-            <div class="flex items-start gap-4">
-              <div
-                class="w-12 h-12 rounded-full bg-[#C4B5FD] flex items-center justify-center text-sm font-semibold text-[#7C3AED]"
-              >
-                {{ getInitials(incident.patientName) }}
-              </div>
-              <div class="flex-1 min-w-0">
-                <h2 class="text-lg font-semibold text-[#2D1B4E] mb-1">
-                  {{ incident.title }}
-                </h2>
-                <p class="text-sm text-[#6B5B8C] mb-2">
-                  {{ incident.patientName }}
-                </p>
-                <div class="flex flex-wrap gap-2 mb-2">
-                  <span
-                    class="px-3 py-1 rounded-full text-xs font-medium"
-                    [ngClass]="getSeverityBadgeClasses(incident.severity)"
-                  >
-                    {{ incident.severity }}
-                  </span>
-                  <span
-                    class="px-3 py-1 rounded-full text-xs font-medium bg-white border border-[#E5E7EB] text-[#2D1B4E]"
-                  >
-                    {{ incident.type }}
-                  </span>
-                  <span
-                    *ngIf="getFirstAlert(incident.id) as firstAlert"
-                    class="px-3 py-1 rounded-full text-xs font-medium"
-                    [ngClass]="getStatusBadgeClasses(firstAlert.status)"
-                  >
-                    {{ firstAlert.status }}
-                  </span>
-                </div>
-                <div class="flex flex-wrap gap-4 text-xs text-[#6B5B8C]">
-                  <div class="flex items-center gap-1">
-                    <span>📍</span>
-                    <span>{{ incident.location }}</span>
-                  </div>
-                  <div class="flex items-center gap-1" *ngIf="getFirstAlert(incident.id) as fa">
-                    <span>⏱</span>
-                    <span>Triggered {{ getElapsedMinutes(fa.triggeredAt) }}</span>
-                  </div>
-                </div>
-              </div>
+      <!-- ========== DOCTOR VIEW ========== -->
+      <ng-container *ngIf="isDoctor; else nonDoctorLayout">
+        <!-- Left column: patient cards -->
+        <div class="lg:col-span-1 space-y-4">
+          <h2 class="text-xl font-semibold text-[#2D1B4E] mb-3">Your Patients</h2>
+          <div *ngIf="doctorPatients.length === 0" class="text-center py-4 text-[#6B5B8C] border border-dashed border-[#C4B5FD] rounded-lg">
+            No patients assigned yet.
+          </div>
+          <div *ngFor="let patient of doctorPatients" class="border-2 rounded-xl bg-white p-4 cursor-pointer hover:shadow-lg transition flex items-center gap-3"
+               [ngClass]="selectedDoctorPatient?.userId === patient.userId ? 'border-[#7C3AED] bg-[#F3E8FF]' : 'border-[#DDD6FE]'"
+               (click)="selectDoctorPatient(patient)">
+            <div class="w-12 h-12 rounded-full bg-[#C4B5FD] flex items-center justify-center text-sm font-semibold overflow-hidden">
+              <ng-container *ngIf="patient.profilePicture; else patientInitials">
+                <img [src]="patient.profilePicture" alt="" class="w-full h-full object-cover">
+              </ng-container>
+              <ng-template #patientInitials>
+                <span class="text-[#7C3AED]">{{ getInitials(patient.name) }}</span>
+              </ng-template>
             </div>
-          </div>
-        </ng-container>
-
-        <ng-template #noIncidents>
-          <div class="border border-[#C4B5FD] rounded-2xl bg-white p-8 text-center">
-            <p class="text-2xl mb-2">✅</p>
-            <p class="text-lg font-semibold text-[#2D1B4E] mb-1">
-              No incidents found
-            </p>
-            <p class="text-sm text-[#6B5B8C]">
-              Adjust filters or create a new incident.
-            </p>
-          </div>
-        </ng-template>
-
-        <!-- Incidents pagination -->
-        <div
-          *ngIf="filteredIncidents.length > 0"
-          class="flex items-center justify-between text-xs text-[#6B5B8C]"
-        >
-          <span>Page {{ incidentPage }} of {{ totalIncidentPages }}</span>
-          <div class="flex gap-2">
-            <button
-              type="button"
-              class="px-3 py-1 rounded-full border border-[#E5E7EB]"
-              [disabled]="incidentPage === 1"
-              (click)="previousIncidentPage()"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              class="px-3 py-1 rounded-full border border-[#E5E7EB]"
-              [disabled]="incidentPage === totalIncidentPages"
-              (click)="nextIncidentPage()"
-            >
-              Next
-            </button>
+            <div class="flex-1">
+              <p class="font-semibold text-[#2D1B4E]">{{ patient.name }}</p>
+              <p class="text-xs text-[#6B5B8C]">Patient</p>
+            </div>
+            <span class="text-xs bg-[#7C3AED] text-white px-2 py-1 rounded-full">{{ getIncidentCountForPatient(patient.userId) }}</span>
           </div>
         </div>
-      </div>
 
-      <!-- Details + alerts -->
-      <div class="lg:col-span-1 space-y-4">
-        <ng-container *ngIf="selectedIncident; else selectPrompt">
-          <div class="border border-[#C4B5FD] rounded-2xl bg-white p-5 space-y-4">
-            <div class="flex items-start justify-between">
-              <div>
-                <h2 class="text-lg font-semibold text-[#2D1B4E]">
-                  Incident Details
-                </h2>
-                <p class="text-xs text-[#6B5B8C]">
-                  {{ selectedIncident.title }}
-                </p>
-              </div>
-              <button
-                type="button"
-                class="text-[#6B5B8C] hover:text-[#111827]"
-                (click)="selectedIncident = null; selectedAlert = null; showAlertForm = false"
-              >
-                ✕
-              </button>
-            </div>
-
-            <!-- Patient info -->
-            <div class="flex items-center gap-3 p-3 bg-[#F3E8FF] rounded-lg">
-              <div
-                class="w-10 h-10 rounded-full bg-[#C4B5FD] flex items-center justify-center text-xs font-semibold text-[#7C3AED]"
-              >
-                {{ getInitials(selectedIncident.patientName || '') }}
-              </div>
-              <div>
-                <p class="font-semibold text-[#2D1B4E]">
-                  {{ selectedIncident.patientName }}
-                </p>
-                <p class="text-xs text-[#6B5B8C]">
-                  {{ selectedIncident.patientId }}
-                </p>
-              </div>
-            </div>
-
-            <div class="space-y-2 text-sm">
-              <div>
-                <label class="text-xs text-[#6B5B8C]">Description</label>
-                <p class="text-[#2D1B4E]">
-                  {{ selectedIncident.description }}
-                </p>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <span
-                  class="px-3 py-1 rounded-full text-xs font-medium"
-                  [ngClass]="getSeverityBadgeClasses(selectedIncident.severity || 'LOW')"
-                >
-                  {{ selectedIncident.severity }}
-                </span>
-                <span
-                  class="px-3 py-1 rounded-full text-xs font-medium bg-white border border-[#E5E7EB] text-[#2D1B4E]"
-                >
-                  {{ selectedIncident.type }}
-                </span>
-              </div>
-              <div class="flex items-center gap-1 text-xs text-[#6B5B8C]">
-                <span>📍</span>
-                <span>{{ selectedIncident.location }}</span>
-              </div>
-            </div>
-
-            <!-- Incident CRUD & create alert -->
-            <div *ngIf="!isPatient" class="space-y-2">
-              <button
-                type="button"
-                class="w-full px-4 py-2 rounded-full bg-[#7C3AED] text-white text-sm font-medium hover:bg-[#6D28D9]"
-                (click)="openCreateAlert(selectedIncident!)"
-              >
-                ＋ Create Alert
-              </button>
-              <button
-                type="button"
-                class="w-full px-4 py-2 rounded-full border border-[#E5E7EB] text-sm text-[#374151]"
-                (click)="openEditIncident(selectedIncident!)"
-              >
-                ✎ Edit Incident
-              </button>
-              <button
-                type="button"
-                class="w-full px-4 py-2 rounded-full border border-[#C06C84] text-sm text-[#C06C84] hover:bg-red-50"
-                (click)="deleteIncident(selectedIncident!)"
-              >
-                🗑 Delete Incident
-              </button>
-            </div>
-
-            <!-- Inline create/edit alert card -->
-            <div *ngIf="showAlertForm" class="border border-[#C4B5FD] rounded-xl bg-[#F9FAFF] p-4">
-              <h3 class="text-sm font-semibold text-[#2D1B4E] mb-2">
-                {{ editingAlert ? 'Edit Alert' : 'Create Alert' }}
-              </h3>
-              <div class="space-y-3 text-xs">
-                <div>
-                  <label class="font-medium text-[#374151] mb-1 block">
-                    Target roles
-                  </label>
-                  <div class="space-y-1">
-                    <label class="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        [checked]="newAlert.targetRoles.includes('Caregiver')"
-                        (change)="onTargetRoleToggle('Caregiver', $any($event.target).checked)"
-                      />
-                      <span>Caregiver</span>
-                    </label>
-                    <label class="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        [checked]="newAlert.targetRoles.includes('Doctor')"
-                        (change)="onTargetRoleToggle('Doctor', $any($event.target).checked)"
-                      />
-                      <span>Doctor</span>
-                    </label>
-                    <label class="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        [checked]="newAlert.targetRoles.includes('Family')"
-                        (change)="onTargetRoleToggle('Family', $any($event.target).checked)"
-                      />
-                      <span>Family</span>
-                    </label>
+        <!-- Right two columns: incidents for selected patient -->
+        <div class="lg:col-span-2 space-y-4" *ngIf="selectedDoctorPatient">
+          <h2 class="text-xl font-semibold text-[#2D1B4E] mb-3">Incidents for {{ selectedDoctorPatient.name }}</h2>
+          <ng-container *ngIf="incidentsForSelectedPatient.length; else noPatientIncidents">
+            <div *ngFor="let incident of incidentsForSelectedPatient" 
+     class="border-2 rounded-2xl bg-white p-5 cursor-pointer hover:shadow-lg transition" 
+     (click)="selectIncident(incident)" 
+     (dblclick)="openIncidentDetailsDialog(incident)">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-full bg-[#C4B5FD] flex items-center justify-center text-sm font-semibold overflow-hidden">
+                  <ng-container *ngIf="incident.patientAvatar; else incidentInitials">
+                    <img [src]="incident.patientAvatar" alt="" class="w-full h-full object-cover">
+                  </ng-container>
+                  <ng-template #incidentInitials>
+                    <span class="text-[#7C3AED]">{{ getInitials(incident.patientName) }}</span>
+                  </ng-template>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-lg font-semibold text-[#2D1B4E] mb-1">{{ incident.title }}</h3>
+                  <p class="text-sm text-[#6B5B8C] mb-2">{{ incident.patientName }}</p>
+                  <div class="flex flex-wrap gap-2 mb-2">
+                    <span class="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1" [ngClass]="getSeverityBadgeClasses(incident.severity)">
+                      <span>{{ getSeverityIcon(incident.severity) }}</span><span>{{ incident.severity }}</span>
+                    </span>
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-white border border-[#E5E7EB] text-[#2D1B4E]">{{ incident.type }}</span>
+                    <span *ngIf="getFirstAlert(incident.incidentId) as firstAlert" class="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1" [ngClass]="getStatusBadgeClasses(firstAlert.status)">
+                      {{ firstAlert.status }}
+                    </span>
+                  </div>
+                  <div class="flex flex-wrap gap-4 text-xs text-[#6B5B8C]">
+                    <div class="flex items-center gap-1"><span>📍</span><span>{{ incident.location }}</span></div>
+                    <div class="flex items-center gap-1"><span>📅</span><span>{{ incident.incidentDate | date:'short' }}</span></div>
+                    <div *ngIf="getFirstAlert(incident.incidentId) as fa" class="flex items-center gap-1">
+                      <span>⏱</span><span>{{ fa.label || 'Alert' }} at {{ fa.sentAt | date:'shortTime' }}</span>
+                    </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #noPatientIncidents>
+            <div class="border border-[#C4B5FD] rounded-2xl bg-white p-8 text-center">
+              <p class="text-2xl mb-2">📋</p>
+              <p class="text-lg font-semibold text-[#2D1B4E] mb-1">No incidents for this patient</p>
+            </div>
+          </ng-template>
+        </div>
+      </ng-container>
 
-                <div>
-                  <label class="font-medium text-[#374151] mb-1 block">
-                    Notification channels
-                  </label>
-                  <div class="space-y-1">
-                    <label class="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        [checked]="newAlert.notificationChannels.includes('in-app')"
-                        (change)="onChannelToggle('in-app', $any($event.target).checked)"
-                      />
-                      <span>In-app</span>
-                    </label>
-                    <label class="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        [checked]="newAlert.notificationChannels.includes('sms')"
-                        (change)="onChannelToggle('sms', $any($event.target).checked)"
-                      />
-                      <span>SMS</span>
-                    </label>
-                    <label class="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        [checked]="newAlert.notificationChannels.includes('email')"
-                        (change)="onChannelToggle('email', $any($event.target).checked)"
-                      />
-                      <span>Email</span>
-                    </label>
+      <!-- ========== NON‑DOCTOR VIEW (patients, caregivers, admins) ========== -->
+      <ng-template #nonDoctorLayout>
+        <!-- Incidents list -->
+        <div class="lg:col-span-2 space-y-4">
+          <ng-container *ngIf="paginatedIncidents.length; else noIncidents">
+            <div *ngFor="let incident of paginatedIncidents" class="border-2 rounded-2xl bg-white p-5 cursor-pointer hover:shadow-lg transition" (click)="selectIncident(incident)">
+              <div class="flex items-start gap-4">
+                <!-- Patient avatar / initials -->
+                <div class="w-12 h-12 rounded-full bg-[#C4B5FD] flex items-center justify-center text-sm font-semibold overflow-hidden">
+                  <ng-container *ngIf="incident.patientAvatar; else initials">
+                    <img [src]="incident.patientAvatar" alt="Patient" class="w-full h-full object-cover">
+                  </ng-container>
+                  <ng-template #initials>
+                    <span class="text-[#7C3AED]">{{ getInitials(incident.patientName) }}</span>
+                  </ng-template>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h2 class="text-lg font-semibold text-[#2D1B4E] mb-1">{{ incident.title }}</h2>
+                  <p class="text-sm text-[#6B5B8C] mb-2">{{ incident.patientName }}</p>
+                  <!-- Badges -->
+                  <div class="flex flex-wrap gap-2 mb-2">
+                    <!-- Severity badge with icon -->
+                    <span class="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1" [ngClass]="getSeverityBadgeClasses(incident.severity)">
+                      <span>{{ getSeverityIcon(incident.severity) }}</span>
+                      <span>{{ incident.severity }}</span>
+                    </span>
+                    <!-- Type badge -->
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-white border border-[#E5E7EB] text-[#2D1B4E]">
+                      {{ incident.type }}
+                    </span>
+                    <!-- First alert status if any -->
+                    <span *ngIf="getFirstAlert(incident.incidentId) as firstAlert" class="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1" [ngClass]="getStatusBadgeClasses(firstAlert.status)">
+                      {{ firstAlert.status }}
+                    </span>
+                  </div>
+                  <!-- Location and time -->
+                  <div class="flex flex-wrap gap-4 text-xs text-[#6B5B8C]">
+                    <div class="flex items-center gap-1"><span>📍</span><span>{{ incident.location }}</span></div>
+                    <div class="flex items-center gap-1"><span>📅</span><span>{{ incident.incidentDate | date:'short' }}</span></div>
+                    <!-- First alert sent time with label -->
+                    <div *ngIf="getFirstAlert(incident.incidentId) as fa" class="flex items-center gap-1">
+                      <span>⏱</span><span>{{ fa.label || 'Alert' }} at {{ fa.sentAt | date:'shortTime' }}</span>
+                    </div>
+                  </div>
+                  <!-- AI Suggestion if present -->
+                  <div *ngIf="incident.aiSuggestion" class="mt-3 flex items-start gap-2 p-3 bg-gradient-to-r from-[#F3E8FF] to-white rounded-lg border border-[#C4B5FD]">
+                    <span class="text-[#7C3AED]">✨</span>
+                    <div>
+                      <p class="text-xs font-semibold text-[#7C3AED] mb-1">AI Insight</p>
+                      <p class="text-xs text-[#6B5B8C]">{{ incident.aiSuggestion }}</p>
+                    </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #noIncidents>
+            <div class="border border-[#C4B5FD] rounded-2xl bg-white p-8 text-center">
+              <p class="text-2xl mb-2">✅</p>
+              <p class="text-lg font-semibold text-[#2D1B4E] mb-1">No incidents found</p>
+              <p class="text-sm text-[#6B5B8C]">Adjust filters or create a new incident.</p>
+            </div>
+          </ng-template>
 
-                <div>
-                  <label class="font-medium text-[#374151] mb-1 block">
-                    Trigger time
-                  </label>
-                  <input
-                    type="time"
-                    class="w-full mt-1 px-3 py-2 rounded-lg border border-[#E5E7EB] text-sm"
-                    [(ngModel)]="newAlert.triggerTime"
-                  />
-                  <p class="mt-1 text-[10px] text-[#6B5B8C]">
-                    Works like an alarm clock: the alert will trigger at the next occurrence of this
-                    time.
-                  </p>
+          <!-- Pagination (for incidents list) -->
+          <div *ngIf="totalPages > 1" class="flex items-center justify-between pt-2 text-xs text-[#6B5B8C] mt-6">
+            <div>
+              Page
+              <span class="font-semibold text-[#2D1B4E]">{{ currentPage }}</span>
+              of
+              <span class="font-semibold text-[#2D1B4E]">{{ totalPages }}</span>
+            </div>
+
+            <div class="inline-flex items-center gap-1 bg-white/80 rounded-full px-1 py-0.5 border border-[#E5D9FF]">
+              <button type="button" class="px-2 py-1 rounded-full hover:bg-[#F3E8FF] disabled:opacity-50" (click)="prevPage()" [disabled]="currentPage === 1">
+                ‹
+              </button>
+              <button *ngFor="let page of pages" type="button" class="min-w-[2rem] px-2 py-1 rounded-full text-xs"
+                      [ngClass]="page === currentPage ? 'bg-[#7C3AED] text-white shadow-sm' : 'text-[#6B5B8C] hover:bg-[#F3E8FF]'"
+                      (click)="setPage(page)">
+                {{ page }}
+              </button>
+              <button type="button" class="px-2 py-1 rounded-full hover:bg-[#F3E8FF] disabled:opacity-50" (click)="nextPage()" [disabled]="currentPage === totalPages">
+                ›
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details panel (right column) -->
+        <div class="lg:col-span-1 space-y-4">
+          <ng-container *ngIf="selectedIncident; else selectPrompt">
+            <div class="border border-[#C4B5FD] rounded-2xl bg-white p-5 space-y-4">
+              <div class="flex items-start justify-between">
+                <div><h2 class="text-lg font-semibold text-[#2D1B4E]">Incident Details</h2><p class="text-xs text-[#6B5B8C]">{{ selectedIncident.title }}</p></div>
+                <button type="button" class="text-[#6B5B8C] hover:text-[#111827]" (click)="selectedIncident = null; selectedAlert = null">✕</button>
+              </div>
+
+              <!-- Patient info -->
+              <div class="flex items-center gap-3 p-3 bg-[#F3E8FF] rounded-lg">
+                <div class="w-10 h-10 rounded-full bg-[#C4B5FD] flex items-center justify-center text-xs font-semibold overflow-hidden">
+                  <ng-container *ngIf="selectedIncident.patientAvatar; else detailInitials">
+                    <img [src]="selectedIncident.patientAvatar" alt="Patient" class="w-full h-full object-cover">
+                  </ng-container>
+                  <ng-template #detailInitials>
+                    <span class="text-[#7C3AED]">{{ getInitials(selectedIncident.patientName) }}</span>
+                  </ng-template>
                 </div>
+                <div>
+                  <p class="font-semibold text-[#2D1B4E]">{{ selectedIncident.patientName }}</p>
+                  <p class="text-xs text-[#6B5B8C]">{{ selectedIncident.patientId }}</p>
+                </div>
+              </div>
 
-                <div class="flex justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    class="px-3 py-1 rounded-full border border-[#E5E7EB]"
-                    (click)="showAlertForm = false; editingAlert = null"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    class="px-3 py-1 rounded-full bg-[#7C3AED] text-white"
-                    [disabled]="
-                      !newAlert.targetRoles.length ||
-                      !newAlert.notificationChannels.length ||
-                      !newAlert.triggerTime
-                    "
-                    (click)="saveAlert()"
-                  >
-                    {{ editingAlert ? 'Save Alert' : 'Create Alert' }}
-                  </button>
+              <div class="space-y-2 text-sm">
+                <div><label class="text-xs text-[#6B5B8C]">Description</label><p class="text-[#2D1B4E]">{{ selectedIncident.description }}</p></div>
+                <div class="flex flex-wrap gap-2">
+                  <span class="px-3 py-1 rounded-full text-xs font-medium" [ngClass]="getSeverityBadgeClasses(selectedIncident.severity)">{{ selectedIncident.severity }}</span>
+                  <span class="px-3 py-1 rounded-full text-xs font-medium bg-white border border-[#E5E7EB] text-[#2D1B4E]">{{ selectedIncident.type }}</span>
+                </div>
+                <div class="flex items-center gap-1 text-xs text-[#6B5B8C]"><span>📍</span><span>{{ selectedIncident.location }}</span></div>
+              </div>
+
+              <!-- Action buttons – only for non‑doctor -->
+              <div *ngIf="!isDoctor" class="space-y-2">
+                <button type="button" class="w-full px-4 py-2 rounded-full bg-[#7C3AED] text-white text-sm font-medium hover:bg-[#6D28D9]" (click)="openCreateAlertDialog(selectedIncident)">＋ Create Alert</button>
+                <button type="button" class="w-full px-4 py-2 rounded-full border border-[#E5E7EB] text-sm text-[#374151]" (click)="openEditIncidentDialog(selectedIncident)">✎ Edit Incident</button>
+                <button type="button" class="w-full px-4 py-2 rounded-full border border-[#C06C84] text-sm text-[#C06C84] hover:bg-red-50" (click)="deleteIncident(selectedIncident)">🗑 Delete Incident</button>
+              </div>
+
+              <!-- Alerts list -->
+              <div *ngIf="alertsForSelectedIncident.length" class="space-y-2">
+                <h3 class="text-xs font-semibold text-[#6B5B8C]">Alerts for this incident</h3>
+                <div *ngFor="let alert of paginatedAlerts" class="flex items-center justify-between rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-xs">
+                  <div>
+                    <p class="font-semibold text-[#2D1B4E]">  {{ alert.label || 'Alert' }} – {{ alert.status }}</p>
+                    <!-- For doctor, show sender info -->
+                    <ng-container *ngIf="isDoctor">
+                      <p class="text-[#6B5B8C]">From: {{ alert.senderName || alert.senderId }}</p>
+                    </ng-container>
+                    <p class="text-[#6B5B8C]">Channels: {{ alert.notificationChannels?.join(', ') || '—' }}</p>
+                  </div>
+                  <div class="flex gap-2">
+                    <ng-container *ngIf="!isDoctor">
+                      <button type="button" class="px-2 py-1 rounded-full border border-[#E5E7EB]" (click)="openEditAlertDialog(selectedIncident, alert)">Edit</button>
+                      <button type="button" class="px-2 py-1 rounded-full border border-[#C06C84] text-[#C06C84]" (click)="deleteAlert(alert)">Delete</button>
+                    </ng-container>
+                    <ng-container *ngIf="isDoctor">
+                      <button *ngIf="alert.status === 'SENT'" type="button" class="px-2 py-1 rounded-full border border-[#F59E0B] text-[#F59E0B]" (click)="acknowledgeAlert(alert)">Acknowledge</button>
+                      <button *ngIf="alert.status !== 'RESOLVED'" type="button" class="px-2 py-1 rounded-full border border-[#22c55e] text-[#22c55e]" (click)="resolveAlert(alert)">Resolve</button>
+                    </ng-container>
+                  </div>
+                </div>
+                <!-- Alerts pagination -->
+                <div *ngIf="alertsForSelectedIncident.length > ALERTS_PER_PAGE" class="flex items-center justify-between text-[10px] text-[#6B5B8C]">
+                  <span>Page {{ alertsPage }} of {{ totalAlertPages }}</span>
+                  <div class="flex gap-1">
+                    <button type="button" class="px-2 py-1 rounded-full border border-[#E5E7EB]" [disabled]="alertsPage === 1" (click)="previousAlertsPage()">Prev</button>
+                    <button type="button" class="px-2 py-1 rounded-full border border-[#E5E7EB]" [disabled]="alertsPage === totalAlertPages" (click)="nextAlertsPage()">Next</button>
+                  </div>
                 </div>
               </div>
             </div>
-
-            <!-- Alerts list for this incident + pagination -->
-            <div *ngIf="alertsForSelectedIncident.length" class="space-y-2">
-              <h3 class="text-xs font-semibold text-[#6B5B8C]">
-                Alerts for this incident
-              </h3>
-              <div
-                *ngFor="let alert of paginatedAlerts"
-                class="flex items-center justify-between rounded-md border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-xs"
-              >
-                <div>
-                  <p class="font-semibold text-[#2D1B4E]">
-                    {{ alert.id }} – {{ alert.status }}
-                  </p>
-                  <p class="text-[#6B5B8C]">
-                    Channels:
-                    {{ alert.notificationChannels.length ? alert.notificationChannels.join(', ') : '—' }}
-                  </p>
-                </div>
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    class="px-2 py-1 rounded-full border border-[#E5E7EB]"
-                    (click)="openEditAlert(alert)"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    class="px-2 py-1 rounded-full border border-[#C06C84] text-[#C06C84]"
-                    (click)="deleteAlert(alert)"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              <div
-                *ngIf="alertsForSelectedIncident.length > ALERTS_PER_PAGE"
-                class="flex items-center justify-between text-[10px] text-[#6B5B8C]"
-              >
-                <span>Page {{ alertsPage }} of {{ totalAlertPages }}</span>
-                <div class="flex gap-1">
-                  <button
-                    type="button"
-                    class="px-2 py-1 rounded-full border border-[#E5E7EB]"
-                    [disabled]="alertsPage === 1"
-                    (click)="previousAlertsPage()"
-                  >
-                    Prev
-                  </button>
-                  <button
-                    type="button"
-                    class="px-2 py-1 rounded-full border border-[#E5E7EB]"
-                    [disabled]="alertsPage === totalAlertPages"
-                    (click)="nextAlertsPage()"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ng-container>
-
-        <ng-template #selectPrompt>
-          <div class="border border-[#C4B5FD] rounded-2xl bg-white p-6 text-sm text-[#6B5B8C]">
-            Select an incident on the left to view details, edit it, and manage alerts.
-          </div>
-        </ng-template>
-      </div>
+          </ng-container>
+          <ng-template #selectPrompt>
+            <div class="border border-[#C4B5FD] rounded-2xl bg-white p-6 text-sm text-[#6B5B8C]">Select an incident on the left to view details, edit it, and manage alerts.</div>
+          </ng-template>
+        </div>
+      </ng-template>
     </section>
   </div>
 </div>
-

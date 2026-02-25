@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, NgZone, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
@@ -21,6 +22,13 @@ export function strongPasswordValidator(): ValidatorFn {
   };
 }
 
+// Extend Window interface to include our callback
+declare global {
+  interface Window {
+    handleGoogleResponse: (response: any) => void;
+  }
+}
+
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
@@ -37,18 +45,28 @@ export class LoginComponent implements OnInit {
     { value: 'PATIENT', label: 'Patient' },
     { value: 'CAREGIVER', label: 'Caregiver' },
     { value: 'DOCTOR', label: 'Doctor' },
-    
   ];
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private ngZone: NgZone,
+    @Inject(PLATFORM_ID) private platformId: Object   // <-- add this
   ) {}
 
   ngOnInit(): void {
     this.initForms();
+
+    // Only define the global callback in the browser (not during SSR)
+    if (isPlatformBrowser(this.platformId)) {
+      window.handleGoogleResponse = (response) => {
+        this.ngZone.run(() => {
+          this.handleGoogleCredential(response.credential);
+        });
+      };
+    }
   }
 
   private initForms(): void {
@@ -96,35 +114,56 @@ export class LoginComponent implements OnInit {
   }
 
   handleRegister(): void {
-  if (this.registerForm.invalid) {
-    this.registerForm.markAllAsTouched();
-    return;
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
+    }
+
+    this.isLoading = true;
+    const userData: RegisterRequest = this.registerForm.value;
+
+    this.authService.register(userData).subscribe({
+      next: () => {
+        // Registration and automatic login succeeded – now navigate
+        this.router.navigate(['/setup-profile'], {
+          state: {
+            name: userData.name,
+            email: userData.email,
+            role: userData.role
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Registration error', err);
+        const errorMsg = err.error?.message || 'Registration failed. Please try again.';
+        this.toastr.error(errorMsg, 'Error');
+        this.isLoading = false;
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
+    });
   }
 
-  this.isLoading = true;
-  const userData: RegisterRequest = this.registerForm.value;
-
-  this.authService.register(userData).subscribe({
-    next: () => {
-      // Set flag for new user flow
-      localStorage.setItem('showWelcomeFlow', 'true');
-      this.toastr.success('Registration successful!', 'Welcome');
-      this.router.navigate(['/']);
-    },
-    error: (err) => {
-      console.error('Registration error', err);
-      const errorMsg = err.error?.message || 'Registration failed. Please try again.';
-      this.toastr.error(errorMsg, 'Error');
-      this.isLoading = false;
-    },
-    complete: () => {
-      this.isLoading = false;
-    }
-  });
-}
-
+  // Called when the user clicks the custom Google button (if you keep it)
   handleGoogleLogin(): void {
-    this.toastr.info('Google login not implemented yet', 'Info');
+    this.toastr.info('Please use the official Google Sign‑In button', 'Info');
+  }
+
+  // Actual handler for the credential received from Google
+  handleGoogleCredential(idToken: string): void {
+    this.isLoading = true;
+    this.authService.googleLogin(idToken).subscribe({
+      next: () => {
+        this.toastr.success('Login successful!', 'Welcome');
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        console.error(err);
+        this.toastr.error('Google login failed');
+        this.isLoading = false;
+      }
+    });
   }
 
   // Password strength meter helpers
@@ -161,7 +200,6 @@ export class LoginComponent implements OnInit {
     return 'bg-green-600';
   }
 
-  // Individual check methods for the template
   hasMinLength(): boolean {
     const password = this.registerForm?.get('password')?.value;
     return password && password.length >= 8;

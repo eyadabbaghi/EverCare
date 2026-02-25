@@ -1,69 +1,45 @@
 package tn.esprit.user.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import tn.esprit.user.clients.ActivitiesClient;
 import tn.esprit.user.dto.*;
 import tn.esprit.user.entity.User;
+import tn.esprit.user.entity.UserRole;
 import tn.esprit.user.repository.UserRepository;
-import tn.esprit.user.security.JwtUtil;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
+    private final KeycloakAdminClient keycloakAdminClient;
+    private final ActivitiesClient activitiesClient;   // new Feign client
 
-    public AuthResponse register(RegisterRequest request) {
-        // Check if email already exists
+    @Transactional
+    public void register(RegisterRequest request) {
+        // Check if email already exists locally
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
-        // Validate password strength
-        if (!isStrongPassword(request.getPassword())) {
-            throw new RuntimeException("Password must be at least 8 characters long, contain an uppercase letter, a digit, and a special character (!@#$%^&*)");
-        }
+        // Create user in Keycloak
+        String keycloakId = keycloakAdminClient.createUser(request);
 
-        // Create user
+        // Create local user
         User user = User.builder()
+                .keycloakId(keycloakId)
                 .name(request.getName())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
-                .isVerified(true) // For simplicity, auto-verify
+                .isVerified(true)
                 .build();
 
         userRepository.save(user);
-
-        // Generate token
-        String token = jwtUtil.generateToken(user.getEmail());
-
-        return new AuthResponse(token);
-    }
-
-    public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid password");
-        }
-
-        String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token);
-    }
-
-    private boolean isStrongPassword(String password) {
-        return password.length() >= 8 &&
-                password.matches(".*[A-Z].*") &&
-                password.matches(".*[0-9].*") &&
-                password.matches(".*[!@#$%^&*()].*");
     }
 
     public User findByEmail(String email) {
@@ -71,68 +47,179 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    @Transactional(readOnly = true)
+    public UserDto getUserDtoByEmail(String email) {
+        User user = findByEmail(email);
+        return mapToDto(user);
+    }
 
+    private UserDto mapToDto(User user) {
+        UserDto dto = new UserDto();
+        dto.setUserId(user.getUserId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        dto.setPhone(user.getPhone());
+        dto.setVerified(user.isVerified());
+        dto.setCreatedAt(user.getCreatedAt());
+        dto.setDateOfBirth(user.getDateOfBirth());
+        dto.setEmergencyContact(user.getEmergencyContact());
+        dto.setProfilePicture(user.getProfilePicture());
 
+        // Doctor fields
+        dto.setYearsExperience(user.getYearsExperience());
+        dto.setSpecialization(user.getSpecialization());
+        dto.setMedicalLicense(user.getMedicalLicense());
+        dto.setWorkplaceType(user.getWorkplaceType());
+        dto.setWorkplaceName(user.getWorkplaceName());
+        dto.setDoctorEmail(user.getDoctorEmail());
+
+        // Relationships
+        if (user.getRole() == UserRole.PATIENT) {
+            dto.setCaregiverEmails(user.getCaregivers().stream()
+                    .map(User::getEmail).collect(Collectors.toSet()));
+        } else if (user.getRole() == UserRole.CAREGIVER) {
+            dto.setPatientEmails(user.getPatients().stream()
+                    .map(User::getEmail).collect(Collectors.toSet()));
+        } else if (user.getRole() == UserRole.DOCTOR) {
+            List<User> patients = userRepository.findByDoctorEmail(user.getEmail());
+            dto.setPatientEmails(patients.stream().map(User::getEmail).collect(Collectors.toSet()));
+        }
+        return dto;
+    }
+    @Transactional
     public User updateUser(String email, UpdateUserRequest request) {
         User user = findByEmail(email);
 
+        // Update common fields
         if (request.getName() != null) {
             user.setName(request.getName());
         }
-
         if (request.getEmail() != null && !request.getEmail().equals(email)) {
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new RuntimeException("Email already in use");
             }
             user.setEmail(request.getEmail());
         }
-
         if (request.getPhone() != null) {
             user.setPhone(request.getPhone());
         }
-
-        // New fields
         if (request.getDateOfBirth() != null) {
             user.setDateOfBirth(request.getDateOfBirth());
         }
-
         if (request.getEmergencyContact() != null) {
             user.setEmergencyContact(request.getEmergencyContact());
         }
-
         if (request.getProfilePicture() != null) {
             user.setProfilePicture(request.getProfilePicture());
+        }
+
+        // Doctor-specific fields
+        if (user.getRole() == UserRole.DOCTOR) {
+            if (request.getYearsExperience() != null) {
+                user.setYearsExperience(request.getYearsExperience());
+            }
+            if (request.getSpecialization() != null) {
+                user.setSpecialization(request.getSpecialization());
+            }
+            if (request.getMedicalLicense() != null) {
+                user.setMedicalLicense(request.getMedicalLicense());
+            }
+            if (request.getWorkplaceType() != null) {
+                user.setWorkplaceType(request.getWorkplaceType());
+            }
+            if (request.getWorkplaceName() != null) {
+                user.setWorkplaceName(request.getWorkplaceName());
+            }
+        }
+
+        // Patient-caregiver relationships
+        if (request.getConnectedEmail() != null && !request.getConnectedEmail().isEmpty()) {
+            User connectedUser = findByEmail(request.getConnectedEmail());
+
+            if (user.getRole() == UserRole.PATIENT) {
+                if (connectedUser.getRole() != UserRole.CAREGIVER) {
+                    throw new RuntimeException("Connected email must belong to a caregiver");
+                }
+                if (user.getCaregivers().contains(connectedUser)) {
+                    user.getCaregivers().remove(connectedUser);
+                    connectedUser.getPatients().remove(user);
+                } else {
+                    user.getCaregivers().add(connectedUser);
+                    connectedUser.getPatients().add(user);
+                }
+                userRepository.save(connectedUser);
+            } else if (user.getRole() == UserRole.CAREGIVER) {
+                if (connectedUser.getRole() != UserRole.PATIENT) {
+                    throw new RuntimeException("Connected email must belong to a patient");
+                }
+                if (user.getPatients().contains(connectedUser)) {
+                    user.getPatients().remove(connectedUser);
+                    connectedUser.getCaregivers().remove(user);
+                } else {
+                    user.getPatients().add(connectedUser);
+                    connectedUser.getCaregivers().add(user);
+                }
+                userRepository.save(connectedUser);
+            } else {
+                throw new RuntimeException("Only patients and caregivers can have connections");
+            }
+        }
+
+        // Doctor assignment for patients
+        if (user.getRole() == UserRole.PATIENT) {
+            if (request.getDoctorEmail() != null) {
+                if (request.getDoctorEmail().isEmpty()) {
+                    user.setDoctorEmail(null);
+                } else {
+                    User doctor = findByEmail(request.getDoctorEmail());
+                    if (doctor.getRole() != UserRole.DOCTOR) {
+                        throw new RuntimeException("Doctor email must belong to a doctor");
+                    }
+                    if (request.getDoctorEmail().equals(user.getDoctorEmail())) {
+                        user.setDoctorEmail(null);
+                    } else {
+                        user.setDoctorEmail(doctor.getEmail());
+                    }
+                }
+            }
         }
 
         return userRepository.save(user);
     }
 
+    @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = findByEmail(email);
-
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
-        }
-
-        if (!isStrongPassword(request.getNewPassword())) {
-            throw new RuntimeException("New password must be at least 8 characters long, contain an uppercase letter, a digit, and a special character (!@#$%^&*)");
-        }
-
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
+        keycloakAdminClient.changePassword(user.getKeycloakId(), request);
     }
 
     @Transactional
     public void deleteUser(String email) {
         User user = findByEmail(email);
+        if (user.getKeycloakId() != null) {
+            keycloakAdminClient.deleteUser(user.getKeycloakId());
+        }
+        if (user.getRole() == UserRole.PATIENT) {
+            for (User caregiver : user.getCaregivers()) {
+                caregiver.getPatients().remove(user);
+            }
+            user.getCaregivers().clear();
+        } else if (user.getRole() == UserRole.CAREGIVER) {
+            for (User patient : user.getPatients()) {
+                patient.getCaregivers().remove(user);
+            }
+            user.getPatients().clear();
+        }
         userRepository.delete(user);
     }
 
-
+    // Admin methods
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
+    @Transactional
     public User updateUserByAdmin(String userId, UpdateUserByAdminRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -151,9 +238,46 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public void deleteUserById(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user.getKeycloakId() != null) {
+            keycloakAdminClient.deleteUser(user.getKeycloakId());
+        }
+        if (user.getRole() == UserRole.PATIENT) {
+            for (User caregiver : user.getCaregivers()) {
+                caregiver.getPatients().remove(user);
+            }
+            user.getCaregivers().clear();
+        } else if (user.getRole() == UserRole.CAREGIVER) {
+            for (User patient : user.getPatients()) {
+                patient.getCaregivers().remove(user);
+            }
+            user.getPatients().clear();
+        }
         userRepository.delete(user);
+    }
+
+    public List<User> searchUsersByRole(String query, UserRole role) {
+        return userRepository.searchByRoleAndQuery(query, role);
+    }
+
+    // New method using Feign client to get activities for a user
+    public List<ActivityDTO> getUserActivities(String userId) {
+        return activitiesClient.getActivitiesForUser(userId);
+    }
+
+    // NEW: find by userId
+    public User findByUserId(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    }
+
+    // NEW: get user DTO by ID
+    @Transactional(readOnly = true)
+    public UserDto getUserDtoById(String userId) {
+        User user = findByUserId(userId);
+        return mapToDto(user);
     }
 }

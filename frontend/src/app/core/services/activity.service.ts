@@ -127,7 +127,9 @@ export interface ActivityWithDetails extends Activity {
   providedIn: 'root'
 })
 export class ActivityService {
-  private apiUrl = 'http://localhost:8092/EverCare'; // direct to microservice
+ // private apiUrl = 'http://localhost:8092/EverCare'; // direct to microservice
+  // New gateway URL
+  private apiUrl = 'http://localhost:8089/EverCare';
 
   constructor(private http: HttpClient) {}
 

@@ -15,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/admin/activity-details")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AdminActivityDetailsController {
 
     private final ActivityService activityService;
