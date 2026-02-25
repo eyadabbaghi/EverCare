@@ -1,0 +1,484 @@
+<div class="tasks-card">
+
+  <!-- ===================================================== -->
+  <!-- ✅ DOCTOR / CAREGIVER DASHBOARD (READ ONLY) -->
+  <!-- ===================================================== -->
+  <ng-container *ngIf="isReadOnly; else patientUI">
+
+    <!-- TOP BAR -->
+    <div class="doc-topbar">
+      <div class="doc-title">
+        <div class="doc-title-main">Patient Tasks Overview</div>
+        <div class="doc-title-sub">Read-only dashboard • Insights + Trends</div>
+      </div>
+
+      <div class="doc-risk" [ngClass]="riskLevelClass">
+        <div class="doc-risk-label">Risk</div>
+        <div class="doc-risk-value">{{ riskLevelText }}</div>
+        <div class="doc-risk-hint">{{ riskHintText }}</div>
+      </div>
+    </div>
+
+    <!-- KPI GRID -->
+    <div class="doc-kpis">
+      <div class="kpi">
+        <div class="kpi-label">Active Tasks</div>
+        <div class="kpi-value">{{ analysisTotalActive }}</div>
+        <div class="kpi-hint">Today/Upcoming</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-label">Completed (Active)</div>
+        <div class="kpi-value">{{ analysisCompletedActive }}</div>
+        <div class="kpi-hint">Marked done</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-label">Completion Rate</div>
+        <div class="kpi-value accent">{{ analysisCompletionRate }}%</div>
+        <div class="kpi-hint">Active tasks only</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-label">Missed (History)</div>
+        <div class="kpi-value danger">{{ analysisMissedCount }}</div>
+        <div class="kpi-hint">Older than 24h</div>
+      </div>
+    </div>
+
+    <!-- CHARTS GRID -->
+    <div class="doc-charts">
+
+      <!-- Doughnut -->
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-title">📊 Task Type Distribution</div>
+          <div class="chart-sub">What the patient mostly gets</div>
+        </div>
+
+        <div class="chart-body">
+          <canvas
+            *ngIf="typeChartData"
+            baseChart
+            [data]="typeChartData"
+            [options]="typeChartOptions"
+            [type]="'doughnut'">
+          </canvas>
+
+          <div class="chart-empty" *ngIf="!typeChartData">
+            No data yet.
+          </div>
+        </div>
+
+        <div class="chart-foot">
+          <div class="chip">Most common: <b>{{ analysisMostCommonType }}</b></div>
+        </div>
+      </div>
+
+      <!-- Trend line -->
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-title">📈 Weekly Completion Trend</div>
+          <div class="chart-sub">Completion rate over last 7 days</div>
+        </div>
+
+        <div class="chart-body tall">
+          <canvas
+            *ngIf="trendChartData"
+            baseChart
+            [data]="trendChartData"
+            [options]="trendChartOptions"
+            [type]="'line'">
+          </canvas>
+
+          <div class="chart-empty" *ngIf="!trendChartData">
+            No trend data available.
+          </div>
+        </div>
+
+        <div class="chart-foot">
+          <div class="chip">
+            Trend: <b>{{ trendText }}</b> • {{ trendHint }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- AI NOTES -->
+    <div class="doc-ai">
+      <div class="ai-title">🤖 Suggested Clinical Notes</div>
+      <div class="ai-body">
+        <div class="ai-line" *ngFor="let rec of aiRecommendations">
+          <span class="ai-dot">•</span> {{ rec }}
+        </div>
+      </div>
+    </div>
+
+    <!-- READ ONLY TASK LIST -->
+    <div class="doc-list-wrap">
+
+      <div class="doc-list-head">
+        <div class="doc-list-title">Task List</div>
+
+        <div class="doc-tabs">
+          <button
+            type="button"
+            class="doc-tab"
+            [class.active]="activeTab === 'ACTIVE'"
+            (click)="setTab('ACTIVE')">
+            Active
+          </button>
+          <button
+            type="button"
+            class="doc-tab"
+            [class.active]="activeTab === 'HISTORY'"
+            (click)="setTab('HISTORY')">
+            History
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters (Doctor) -->
+      <div class="doc-filters">
+        <input
+          class="doc-search"
+          [(ngModel)]="searchTerm"
+          placeholder="Search title or notes..." />
+
+        <select class="doc-select" [(ngModel)]="filterType">
+          <option value="ALL">All Types</option>
+          <option value="MEDICATION">MEDICATION</option>
+          <option value="MEAL">MEAL</option>
+          <option value="EXERCISE">EXERCISE</option>
+          <option value="APPOINTMENT">APPOINTMENT</option>
+          <option value="SOCIAL">SOCIAL</option>
+          <option value="OTHER">OTHER</option>
+        </select>
+
+        <select class="doc-select" [(ngModel)]="filterStatus">
+          <option value="ALL">All</option>
+          <option value="TODO">To do</option>
+          <option value="DONE">Done</option>
+        </select>
+
+        <select class="doc-select" [(ngModel)]="sortMode">
+          <option value="TIME">Sort: Time</option>
+          <option value="TITLE">Sort: Title</option>
+          <option value="TYPE">Sort: Type</option>
+        </select>
+      </div>
+
+      <div class="doc-task-list">
+
+        <div class="doc-empty" *ngIf="displayedTasks.length === 0">
+          No matching tasks.
+        </div>
+
+        <div
+          class="doc-task-row"
+          *ngFor="let t of displayedTasks; trackBy: trackByTaskId"
+          [class.done]="t.completed">
+
+          <div class="doc-task-left">
+            <div class="doc-badge" [class.done]="t.completed">
+              {{ t.completed ? 'DONE' : 'TODO' }}
+            </div>
+
+            <div class="doc-task-main">
+              <div class="doc-task-title">{{ t.title }}</div>
+
+              <div class="doc-task-sub">
+                <span class="doc-pill">{{ t.taskType }}</span>
+                <span class="doc-time">{{ t.scheduledTime }}</span>
+
+                <span
+                  *ngIf="activeTab === 'HISTORY'"
+                  class="doc-history-pill"
+                  [class.missed]="!t.completed">
+                  {{ t.completed ? 'DONE' : 'MISSED' }}
+                </span>
+              </div>
+
+              <div class="doc-notes" *ngIf="t.notes">{{ t.notes }}</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- ===================================================== -->
+  <!-- ✅ PATIENT UI -->
+  <!-- ===================================================== -->
+  <ng-template #patientUI>
+
+    <!-- HEADER -->
+    <div class="tasks-header">
+      <div>
+        <h3>Daily Tasks</h3>
+
+        <p *ngIf="activeTab === 'ACTIVE'">
+          {{ completedCount }} of {{ totalCount }} tasks completed
+        </p>
+
+        <p *ngIf="activeTab === 'HISTORY'">
+          Archived tasks (last 24h+)
+        </p>
+      </div>
+
+      <div class="percent" *ngIf="activeTab === 'ACTIVE'">
+        {{ progressPercent }}%
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="progress-wrap" *ngIf="activeTab === 'ACTIVE'">
+      <div class="progress-label">Progress</div>
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="progressPercent"></div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button
+        type="button"
+        class="tab"
+        [class.active]="activeTab === 'ACTIVE'"
+        (click)="setTab('ACTIVE')">
+        Active
+      </button>
+
+      <button
+        type="button"
+        class="tab"
+        [class.active]="activeTab === 'HISTORY'"
+        (click)="setTab('HISTORY')">
+        History
+      </button>
+    </div>
+
+    <!-- SEARCH + FILTERS (PATIENT) -->
+    <div class="task-filters">
+
+      <input
+        class="search"
+        [(ngModel)]="searchTerm"
+        placeholder="Search title or notes..." />
+
+      <select class="select" [(ngModel)]="filterType">
+        <option value="ALL">All Types</option>
+        <option value="MEDICATION">MEDICATION</option>
+        <option value="MEAL">MEAL</option>
+        <option value="EXERCISE">EXERCISE</option>
+        <option value="APPOINTMENT">APPOINTMENT</option>
+        <option value="SOCIAL">SOCIAL</option>
+        <option value="OTHER">OTHER</option>
+      </select>
+
+      <!-- ✅ BACK: DONE / TODO filter -->
+      <select class="select" [(ngModel)]="filterStatus">
+        <option value="ALL">All</option>
+        <option value="TODO">To do</option>
+        <option value="DONE">Done</option>
+      </select>
+
+      <select class="select" [(ngModel)]="sortMode">
+        <option value="TIME">Sort: Time</option>
+        <option value="TITLE">Sort: Title</option>
+        <option value="TYPE">Sort: Type</option>
+      </select>
+
+    </div>
+
+    <!-- LIST -->
+    <div class="task-list">
+
+      <div class="empty" *ngIf="displayedTasks.length === 0">
+        No matching tasks.
+      </div>
+
+      <div
+        class="task-row"
+        *ngFor="let t of displayedTasks; trackBy: trackByTaskId"
+        [class.done]="t.completed">
+
+        <label class="left">
+          <input
+            type="checkbox"
+            [checked]="t.completed"
+            [disabled]="activeTab === 'HISTORY'"
+            (change)="toggle(t)" />
+
+          <div class="meta">
+
+            <!-- ✅ BACK: ICONS by type -->
+            <div class="title">
+              <span
+                class="ico"
+                [ngClass]="
+                  t.taskType === 'MEDICATION' ? 'i-pill'
+                  : t.taskType === 'MEAL' ? 'i-heart'
+                  : t.taskType === 'EXERCISE' ? 'i-walk'
+                  : t.taskType === 'SOCIAL' ? 'i-drop'
+                  : t.taskType === 'APPOINTMENT' ? 'i-sparkle'
+                  : 'i-sparkle'
+                ">
+              </span>
+
+              {{ t.title }}
+            </div>
+
+            <div class="sub">
+              <span class="pill">{{ t.taskType }}</span>
+              <span class="time">{{ t.scheduledTime }}</span>
+
+              <!-- HISTORY badge -->
+              <span
+                *ngIf="activeTab === 'HISTORY'"
+                class="status-badge"
+                [ngClass]="t.completed ? 'done-badge' : 'missed-badge'">
+                {{ t.completed ? 'DONE' : 'MISSED' }}
+              </span>
+            </div>
+
+            <div class="notes" *ngIf="t.notes">{{ t.notes }}</div>
+
+          </div>
+        </label>
+
+        <!-- ACTIONS -->
+        <div class="actions">
+
+          <button
+            type="button"
+            class="btn-icon"
+            *ngIf="activeTab === 'ACTIVE'"
+            (click)="openEdit(t)"
+            title="Edit">
+            ✏️
+          </button>
+
+          <button
+            type="button"
+            class="btn-icon danger"
+            (click)="remove(t); $event.stopPropagation(); $event.preventDefault()"
+            title="Delete">
+            🗑️
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FAB -->
+    <button
+      type="button"
+      class="fab"
+      *ngIf="activeTab === 'ACTIVE'"
+      (click)="openAdd()">
+      +
+    </button>
+
+    <!-- MODAL -->
+    <div class="modal-backdrop" *ngIf="isModalOpen">
+      <div class="modal">
+
+        <h3>{{ isEditing ? 'Edit Task' : 'Add Task' }}</h3>
+
+        <label>Title</label>
+        <input [(ngModel)]="currentTask.title" placeholder="e.g. Drink water" />
+
+        <label>Task Type</label>
+        <select [(ngModel)]="currentTask.taskType">
+          <option value="MEDICATION">MEDICATION</option>
+          <option value="MEAL">MEAL</option>
+          <option value="EXERCISE">EXERCISE</option>
+          <option value="APPOINTMENT">APPOINTMENT</option>
+          <option value="SOCIAL">SOCIAL</option>
+          <option value="OTHER">OTHER</option>
+        </select>
+
+        <label>Scheduled Time</label>
+        <input type="time" [(ngModel)]="currentTask.scheduledTime" />
+
+        <label>Notes</label>
+        <textarea rows="3" [(ngModel)]="currentTask.notes"></textarea>
+
+        <div class="modal-actions">
+          <button type="button" class="btn" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn primary" (click)="save()">Save</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- ✅ SMART INSIGHTS (UNDER CRUD) -->
+    <!-- ===================================================== -->
+    <div class="patient-smart">
+
+      <div class="smart-card score" [ngClass]="patientAdherenceClass">
+        <div class="smart-title">🏥 Adherence Health Score</div>
+        <div class="smart-score">{{ patientAdherenceScore }}/100</div>
+        <div class="smart-sub">{{ patientAdherenceLabel }}</div>
+
+        <div class="smart-why">
+          <div class="why-title">Why?</div>
+          <div class="why-line" *ngFor="let w of patientWhy">• {{ w }}</div>
+        </div>
+      </div>
+
+      <div class="smart-card">
+        <div class="smart-title">⏰ Best Time to Succeed</div>
+
+        <div class="smart-row">
+          <div class="smart-k">Best window</div>
+          <div class="smart-v"><b>{{ bestTimeSlotText }}</b></div>
+        </div>
+
+        <div class="smart-row">
+          <div class="smart-k">Hardest window</div>
+          <div class="smart-v">{{ worstTimeSlotText }}</div>
+        </div>
+
+        <div class="smart-hint">{{ bestTimeHint }}</div>
+
+        <div class="chart-body mt-3" style="height:220px" *ngIf="bestTimeChartData">
+          <canvas
+            baseChart
+            [data]="bestTimeChartData"
+            [options]="bestTimeChartOptions"
+            [type]="'bar'">
+          </canvas>
+        </div>
+      </div>
+
+      <div class="smart-card">
+        <div class="smart-title">🧠 Mood ↔ Task Completion</div>
+        <div class="smart-hint">{{ moodCorrelationHint }}</div>
+
+        <div class="mood-table" *ngIf="moodCorrelationRows && moodCorrelationRows.length > 0">
+          <div class="mood-row head">
+            <div>Mood</div>
+            <div>Completion</div>
+            <div>Days</div>
+          </div>
+
+          <div class="mood-row" *ngFor="let r of moodCorrelationRows">
+            <div>{{ r.mood }}</div>
+            <div>{{ r.completion }}%</div>
+            <div>{{ r.days }}</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </ng-template>
+
+</div>

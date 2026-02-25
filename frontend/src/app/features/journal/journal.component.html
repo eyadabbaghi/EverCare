@@ -1,0 +1,57 @@
+<div class="journal-box">
+  <h3 class="text-xl font-bold text-[#2D1B4E] mb-1">Personal Journal</h3>
+  <p class="text-[#6B5B8C] mb-4">Speak or type your thoughts</p>
+
+  <textarea
+    [(ngModel)]="journalText"
+    class="w-full border border-gray-200 rounded-2xl p-4 focus:ring-[#7C3AED] focus:border-[#7C3AED]"
+    rows="5"
+    placeholder="How was your day? What are you grateful for?"
+  ></textarea>
+
+  <div class="mt-4 flex gap-3">
+    <button
+      type="button"
+      (click)="startListening()"
+      class="bg-[#F3E8FF] text-[#7C3AED] px-5 py-3 rounded-full font-semibold hover:opacity-90"
+    >
+      🎤 Start Voice
+    </button>
+
+    <button
+      type="button"
+      (click)="stopListening()"
+      class="bg-gray-100 text-[#2D1B4E] px-5 py-3 rounded-full font-semibold hover:bg-gray-200"
+    >
+      ⏹ Stop
+    </button>
+
+    <button
+      type="button"
+      (click)="saveEntry()"
+      class="ml-auto bg-[#7C3AED] text-white px-6 py-3 rounded-full font-bold hover:bg-[#6D28D9]"
+    >
+      Save Entry
+    </button>
+  </div>
+
+  <div class="mt-10">
+    <h4 class="text-lg font-bold text-[#2D1B4E] mb-4">Previous Entries</h4>
+
+    <div *ngIf="entries.length === 0" class="text-[#6B5B8C]">
+      No journal entries yet.
+    </div>
+
+    <div *ngFor="let e of entries; let i = index"
+         class="p-4 bg-[#F9FAFB] rounded-2xl border border-gray-100 mb-3">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-[#6B5B8C]">{{ e.date }}</span>
+        <button (click)="deleteEntry(i)"
+                class="text-[#C06C84] hover:bg-red-50 px-3 py-1 rounded-lg">
+          Delete
+        </button>
+      </div>
+      <p class="text-[#2D1B4E] whitespace-pre-wrap">{{ e.text }}</p>
+    </div>
+  </div>
+</div>
