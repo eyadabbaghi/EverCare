@@ -1,17 +1,32 @@
 <div class="min-h-screen bg-gradient-to-br from-[#FAF8FC] to-[#F3E8FF] p-4 md:p-8">
   <div class="max-w-7xl mx-auto space-y-6">
 
-    <!-- Header -->
+    <!-- Loading State -->
+    <div *ngIf="loading" class="fixed inset-0 bg-black/20 z-50 flex items-center justify-center">
+      <div class="bg-white rounded-lg p-4 flex items-center space-x-3">
+        <div class="w-6 h-6 border-2 border-[#7C3AED] border-t-transparent rounded-full animate-spin"></div>
+        <span class="text-[#2D1B4E]">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center justify-between">
+      <span>{{ errorMessage }}</span>
+      <button class="text-red-500 hover:text-red-700" (click)="errorMessage = ''">✕</button>
+    </div>
+
+    <!-- Header with Patient Info -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
 
 
       <button
-        class="bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center"
-        (click)="openAddDialog()">
+        class="bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+        (click)="openAddDialog()"
+        [disabled]="loading">
         <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 5v14M5 12h14"/>
         </svg>
-        Nouveau rendez-vous
+        New appointment
       </button>
     </div>
 
@@ -20,6 +35,50 @@
       [doctors]="doctors"
       (filtersChanged)="onFiltersChanged($event)">
     </app-appointment-filters>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl border border-[#C4B5FD] shadow-sm p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-[#6B5B8C]">Total</p>
+            <p class="text-2xl font-bold text-[#2D1B4E]">{{ myAppointments.length }}</p>
+          </div>
+          <div class="w-10 h-10 bg-[#F3E8FF] rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5 text-[#7C3AED]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-[#C4B5FD] shadow-sm p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-[#6B5B8C]">Upcoming</p>
+            <p class="text-2xl font-bold text-[#2D1B4E]">{{ upcomingAppointments.length }}</p>
+          </div>
+          <div class="w-10 h-10 bg-[#E6F0FA] rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5 text-[#2D1B4E]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-xl border border-[#C4B5FD] shadow-sm p-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-[#6B5B8C]">Completed</p>
+            <p class="text-2xl font-bold text-[#2D1B4E]">{{ pastAppointments.length }}</p>
+          </div>
+          <div class="w-10 h-10 bg-[#F1F5F9] rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5 text-[#6B5B8C]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Main Grid -->
     <div class="grid lg:grid-cols-3 gap-6">
@@ -35,11 +94,12 @@
 
       <!-- Upcoming List Component -->
       <app-appointment-list
-        title="À venir"
+        title="Upcoming"
         [appointments]="upcomingAppointments"
-        emptyMessage="Aucun rendez-vous à venir"
-        addButtonText="Prendre rendez-vous"
+        emptyMessage="No upcoming appointments"
+        addButtonText="Book appointment"
         [showAddButton]="true"
+        [showActionButtons]="true"
         [scrollable]="true"
         (onCardClick)="viewAppointmentDetails($event)"
         (onAction)="handleAppointmentAction($event)"
@@ -48,14 +108,16 @@
     </div>
 
     <!-- Past Appointments List -->
-    <app-appointment-list
-      title="Historique"
-      [appointments]="pastAppointments"
-      emptyMessage="Aucun ancien rendez-vous"
-      [showActionButtons]="false"
-      [scrollable]="true"
-      (onCardClick)="viewAppointmentDetails($event)">
-    </app-appointment-list>
+    <div id="appointments-section">
+      <app-appointment-list
+        title="History"
+        [appointments]="pastAppointments"
+        emptyMessage="No past appointments"
+        [showActionButtons]="false"
+        [scrollable]="true"
+        (onCardClick)="viewAppointmentDetails($event)">
+      </app-appointment-list>
+    </div>
 
     <!-- Add Appointment Form Modal -->
     <app-appointment-form
@@ -68,7 +130,7 @@
       (onClose)="closeAddDialog()"
       (onSubmit)="addAppointment($event)"
       (onDoctorChange)="onDoctorSelected($event)"
-      (onDateChange)="onDateSelected($event)">
+      (onDateChange)="loadAvailableSlots(newAppointment.doctorId, $event)">
     </app-appointment-form>
 
     <!-- Appointment Details Modal -->

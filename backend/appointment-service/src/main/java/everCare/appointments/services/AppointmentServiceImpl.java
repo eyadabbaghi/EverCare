@@ -36,6 +36,44 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Set creation timestamp
         appointment.setCreatedAt(LocalDateTime.now());
 
+        // ========== FIX: Load actual entities from database ==========
+
+        // Load patient from database
+        if (appointment.getPatient() != null && appointment.getPatient().getUserId() != null) {
+            User patient = userRepository.findById(appointment.getPatient().getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + appointment.getPatient().getUserId()));
+            appointment.setPatient(patient);
+        } else {
+            throw new ResourceNotFoundException("Patient is required");
+        }
+
+        // Load doctor from database
+        if (appointment.getDoctor() != null && appointment.getDoctor().getUserId() != null) {
+            User doctor = userRepository.findById(appointment.getDoctor().getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + appointment.getDoctor().getUserId()));
+            appointment.setDoctor(doctor);
+        } else {
+            throw new ResourceNotFoundException("Doctor is required");
+        }
+
+        // Load caregiver if present
+        if (appointment.getCaregiver() != null && appointment.getCaregiver().getUserId() != null) {
+            User caregiver = userRepository.findById(appointment.getCaregiver().getUserId())
+                    .orElse(null); // Caregiver is optional
+            appointment.setCaregiver(caregiver);
+        }
+
+        // Load consultation type
+        if (appointment.getConsultationType() != null && appointment.getConsultationType().getTypeId() != null) {
+            ConsultationType consultationType = consultationTypeRepository.findById(appointment.getConsultationType().getTypeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Consultation type not found with id: " + appointment.getConsultationType().getTypeId()));
+            appointment.setConsultationType(consultationType);
+        } else {
+            throw new ResourceNotFoundException("Consultation type is required");
+        }
+
+        // ========== END OF FIX ==========
+
         // Calculate end time based on consultation type duration
         if (appointment.getConsultationType() != null && appointment.getStartDateTime() != null) {
             ConsultationType type = appointment.getConsultationType();
@@ -44,9 +82,13 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         // Generate video link
-        if (appointment.getVideoLink() == null) {
-            String patientId = appointment.getPatient().getUserId().substring(0, 8);
-            String doctorId = appointment.getDoctor().getUserId().substring(0, 8);
+        if (appointment.getVideoLink() == null && appointment.getPatient() != null && appointment.getDoctor() != null) {
+            String patientId = appointment.getPatient().getUserId().length() >= 8
+                    ? appointment.getPatient().getUserId().substring(0, 8)
+                    : appointment.getPatient().getUserId();
+            String doctorId = appointment.getDoctor().getUserId().length() >= 8
+                    ? appointment.getDoctor().getUserId().substring(0, 8)
+                    : appointment.getDoctor().getUserId();
             appointment.setVideoLink("https://consult.evercare.com/room/" + doctorId + "-" + patientId);
         }
 
@@ -155,12 +197,18 @@ public class AppointmentServiceImpl implements AppointmentService {
             existingAppointment.setSimpleSummary(appointmentDetails.getSimpleSummary());
         }
 
-        if (appointmentDetails.getCaregiver() != null) {
-            existingAppointment.setCaregiver(appointmentDetails.getCaregiver());
+        // Load caregiver if provided
+        if (appointmentDetails.getCaregiver() != null && appointmentDetails.getCaregiver().getUserId() != null) {
+            User caregiver = userRepository.findById(appointmentDetails.getCaregiver().getUserId())
+                    .orElse(null);
+            existingAppointment.setCaregiver(caregiver);
         }
 
-        if (appointmentDetails.getConsultationType() != null) {
-            existingAppointment.setConsultationType(appointmentDetails.getConsultationType());
+        // Load consultation type if provided
+        if (appointmentDetails.getConsultationType() != null && appointmentDetails.getConsultationType().getTypeId() != null) {
+            ConsultationType consultationType = consultationTypeRepository.findById(appointmentDetails.getConsultationType().getTypeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Consultation type not found"));
+            existingAppointment.setConsultationType(consultationType);
         }
 
         existingAppointment.setUpdatedAt(LocalDateTime.now());
@@ -253,7 +301,6 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public List<Appointment> getAppointmentsNeedingReminder(LocalDateTime reminderTime) {
-        // This is a simplified example - you'd have more complex logic
         LocalDateTime reminderWindowStart = reminderTime.minusHours(24);
         LocalDateTime reminderWindowEnd = reminderTime.plusHours(1);
 
@@ -265,12 +312,9 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public void sendReminders() {
-        // This would integrate with a notification service
         List<Appointment> appointmentsNeedingReminder = getAppointmentsNeedingReminder(LocalDateTime.now());
 
         for (Appointment appointment : appointmentsNeedingReminder) {
-            // Send reminder to patient
-            // Send reminder to caregiver if exists
             System.out.println("Sending reminder for appointment: " + appointment.getAppointmentId());
         }
     }

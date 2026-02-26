@@ -59,10 +59,7 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     // ========== AUTHENTICATION ==========
 
-    @Query("SELECT u FROM User u WHERE u.email = :email AND u.password = :password")
-    Optional<User> login(@Param("email") String email, @Param("password") String password);
 
-    Optional<User> findByEmailAndPassword(String email, String password);
 
     // ========== VERIFICATION ==========
 

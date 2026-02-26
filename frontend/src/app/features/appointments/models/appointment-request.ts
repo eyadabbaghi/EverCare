@@ -2,13 +2,22 @@ import {AppointmentStatus, CaregiverPresence, RecurrencePattern} from './appoint
 
 export interface CreateAppointmentRequest {
   patientId: string;
+  patientName?: string; // Optional, backend might ignore
   doctorId: string;
+  doctorName?: string; // Optional, backend might ignore
   caregiverId?: string;
+  caregiverName?: string; // Optional, backend might ignore
   consultationTypeId: string;
+  consultationTypeName?: string; // Optional, backend might ignore
   startDateTime: Date;
-  caregiverPresence?: CaregiverPresence;
+  endDateTime: Date;
+  status?: string;
+  caregiverPresence: string;
+  videoLink?: string;
+  simpleSummary?: string;
+  // Additional fields your DTO might have
   isRecurring?: boolean;
-  recurrencePattern?: RecurrencePattern;
+  recurrencePattern?: string;
   doctorNotes?: string;
 }
 

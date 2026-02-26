@@ -1,7 +1,13 @@
 package everCare.appointments.controllers;
 
 import everCare.appointments.entities.Appointment;
+import everCare.appointments.entities.User;
+import everCare.appointments.entities.ConsultationType;
+import everCare.appointments.dtos.AppointmentDTO;
 import everCare.appointments.services.AppointmentService;
+import everCare.appointments.repositories.UserRepository;
+import everCare.appointments.repositories.ConsultationTypeRepository;
+import everCare.appointments.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -17,11 +23,61 @@ import java.util.List;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+    private final UserRepository userRepository;
+    private final ConsultationTypeRepository consultationTypeRepository;
 
-    // ========== CREATE ==========
+    // ========== CREATE WITH DTO ==========
 
     @PostMapping
-    public ResponseEntity<Appointment> createAppointment(@RequestBody Appointment appointment) {
+    public ResponseEntity<Appointment> createAppointment(@RequestBody AppointmentDTO appointmentDTO) {
+        // Create new appointment entity from DTO
+        Appointment appointment = new Appointment();
+
+        // Load and set patient
+        if (appointmentDTO.getPatientId() != null) {
+            User patient = userRepository.findById(appointmentDTO.getPatientId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + appointmentDTO.getPatientId()));
+            appointment.setPatient(patient);
+        } else {
+            throw new ResourceNotFoundException("Patient ID is required");
+        }
+
+        // Load and set doctor
+        if (appointmentDTO.getDoctorId() != null) {
+            User doctor = userRepository.findById(appointmentDTO.getDoctorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + appointmentDTO.getDoctorId()));
+            appointment.setDoctor(doctor);
+        } else {
+            throw new ResourceNotFoundException("Doctor ID is required");
+        }
+
+        // Load and set caregiver (optional)
+        if (appointmentDTO.getCaregiverId() != null && !appointmentDTO.getCaregiverId().isEmpty()) {
+            User caregiver = userRepository.findById(appointmentDTO.getCaregiverId())
+                    .orElse(null);
+            appointment.setCaregiver(caregiver);
+        }
+
+        // Load and set consultation type
+        if (appointmentDTO.getConsultationTypeId() != null) {
+            ConsultationType consultationType = consultationTypeRepository.findById(appointmentDTO.getConsultationTypeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Consultation type not found with id: " + appointmentDTO.getConsultationTypeId()));
+            appointment.setConsultationType(consultationType);
+        } else {
+            throw new ResourceNotFoundException("Consultation type ID is required");
+        }
+
+        // Set other fields
+        appointment.setStartDateTime(appointmentDTO.getStartDateTime());
+        appointment.setEndDateTime(appointmentDTO.getEndDateTime());
+        appointment.setStatus(appointmentDTO.getStatus() != null ? appointmentDTO.getStatus() : "SCHEDULED");
+        appointment.setCaregiverPresence(appointmentDTO.getCaregiverPresence());
+        appointment.setVideoLink(appointmentDTO.getVideoLink());
+        appointment.setSimpleSummary(appointmentDTO.getSimpleSummary());
+
+        // Set default values for other fields
+        appointment.setRecurring(false);
+
         Appointment createdAppointment = appointmentService.createAppointment(appointment);
         return new ResponseEntity<>(createdAppointment, HttpStatus.CREATED);
     }

@@ -32,7 +32,9 @@ export type AppointmentStatus =
   | 'COMPLETED'
   | 'CANCELLED'
   | 'RESCHEDULED'
-  | 'MISSED';
+  | 'MISSED'
+  |'IN_PROGRESS';
+
 
 export type CaregiverPresence = 'PHYSICAL' | 'REMOTE' | 'NONE';
 

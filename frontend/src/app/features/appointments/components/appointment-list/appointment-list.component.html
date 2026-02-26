@@ -9,8 +9,8 @@
     </div>
 
     <!-- List -->
-    <div class="space-y-3" [class.max-h-[500px]="scrollable" [class.overflow-y-auto]="scrollable" [class.pr-2]="scrollable">
-      <ng-container *ngFor="let apt of appointments">
+    <div class="space-y-3 flex flex-col" [class.max-h-[500px]="scrollable" [class.overflow-y-auto]="scrollable" [class.pr-2]="scrollable">
+      <ng-container *ngFor="let apt of appointments" >
         <app-appointment-card
           [appointment]="apt"
           [showActionButton]="showActionButtons"
