@@ -32,6 +32,15 @@ public class Message {
 
     private boolean isRead;
 
+    @Column(nullable = true)
+    private String fileName;
+
+    @Column(nullable = true)
+    private String fileType; // image/png, application/pdf, etc.
+
+    @Column(nullable = true)
+    private String fileUrl;
+
     @PrePersist
     protected void onSend() {
         this.sentAt = LocalDateTime.now();

@@ -25,12 +25,14 @@ interface Notification {
   styleUrls: ['./navigation.component.css'],
 })
 export class NavigationComponent implements OnInit, OnDestroy {
+  // AJOUT DE 'communication' DANS LA LISTE DES ITEMS
   navItems: NavItem[] = [
     { id: 'home', label: 'Home', route: '/' },
     { id: 'activities', label: 'Activities', route: '/activities' },
     { id: 'appointments', label: 'Appointments', route: '/appointments' },
     { id: 'medical-folder', label: 'Medical Folder', route: '/medical-folder' },
     { id: 'alerts', label: 'Alerts', route: '/alerts' },
+    { id: 'communication', label: 'Messages', route: '/communication' }, // Route vers ton nouveau module
   ];
 
   user: User | null = null;
@@ -68,7 +70,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
     },
   ];
 
-  constructor(private readonly router: Router, private authService: AuthService) {}
+  constructor(private readonly router: Router, private authService: AuthService) { }
 
   ngOnInit(): void {
     this.userSub = this.authService.currentUser$.subscribe((user: User | null) => {
@@ -119,6 +121,8 @@ export class NavigationComponent implements OnInit, OnDestroy {
     this.markAsRead(notification.id);
     if (notification.type === 'alert') this.navigate('/alerts');
     else if (notification.type === 'appointment') this.navigate('/appointments');
+    // Optionnel : Gérer le clic sur une notification de type message
+    else if (notification.type === 'message') this.navigate('/communication');
   }
 
   getSeverityClasses(severity?: string): string {
@@ -150,9 +154,6 @@ export class NavigationComponent implements OnInit, OnDestroy {
     this.navigate('/profile');
   }
 
-  /** =======================
-   *  Close dropdown when clicking outside
-   *  ======================= */
   @HostListener('document:click', ['$event.target'])
   onClickOutside(target: HTMLElement) {
     const dropdown = document.getElementById('profile-dropdown');

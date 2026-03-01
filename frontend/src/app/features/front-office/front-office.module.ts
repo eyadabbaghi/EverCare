@@ -20,6 +20,7 @@ import { SharedModule } from '../../shared/shared.module';
 import { ActivitiesComponent } from './pages/activities/activities.component';
 import { ActivityDetailsComponent } from './pages/activity-details/activity-details.component';
 import { AlertsComponent } from './pages/alerts/alerts.component';
+
 import { NavigationComponent } from './ui/navigation/navigation.component';
 import { AiAssistantComponent } from './ui/ai-assistant/ai-assistant.component';
 import { WelcomePopupComponent } from './ui/welcome-popup/welcome-popup.component';
@@ -27,6 +28,9 @@ import { AlzheimersAssessmentComponent } from './ui/alzheimers-assessment/alzhei
 import { ProfileComponent } from './pages/profile/profile.component';
 import { LucideAngularModule } from 'lucide-angular';
 import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
+
+// 1. IMPORTATION DU MODULE DE COMMUNICATION (Pas du composant seul)
+import { CommunicationModule } from '../communication/communication.module';
 
 @NgModule({
   declarations: [
@@ -52,6 +56,7 @@ import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
     AlzheimersAssessmentComponent,
     ProfileComponent,
     NewUserFlowComponent,
+    // Note : SURTOUT PAS de ChatComponent ici !
   ],
   imports: [
     CommonModule,
@@ -60,10 +65,12 @@ import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
     SharedModule,
     FrontOfficeRoutingModule,
     LucideAngularModule,
+    // 2. ON AJOUTE LE MODULE ICI
+    CommunicationModule,
   ],
   exports: [
     NavigationComponent,
     AiAssistantComponent,
   ],
 })
-export class FrontOfficeModule {}
+export class FrontOfficeModule { }

@@ -1,24 +1,17 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of } from 'rxjs';
+import { tap, map } from 'rxjs/operators';
 import { Router } from '@angular/router';
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
+export interface LoginRequest { email: string; password: string; }
+export interface RegisterRequest { name: string; email: string; password: string; role: string; }
 
-export interface RegisterRequest {
-  name: string;
-  email: string;
-  password: string;
-  role: string; // 'PATIENT', 'CAREGIVER', 'DOCTOR', 'ADMIN'
-}
-
+// MODIFIÉ : L'interface doit refléter le nouveau format du Backend
 export interface AuthResponse {
   token: string;
+  user: User;
 }
 
 export interface User {
@@ -29,24 +22,13 @@ export interface User {
   phone?: string;
   isVerified?: boolean;
   createdAt?: string;
-  profilePicture?: string; 
-}
-// Add these interfaces at the top
-export interface UpdateUserRequest {
-  name?: string;
-  email?: string;
-  phone?: string;
+  profilePicture?: string;
 }
 
-export interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-}
+export interface UpdateUserRequest { name?: string; email?: string; phone?: string; }
+export interface ChangePasswordRequest { currentPassword: string; newPassword: string; }
 
-
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private apiUrl = 'http://localhost:8096/EverCare/auth';
   private currentUserSubject = new BehaviorSubject<User | null>(null);
@@ -62,48 +44,56 @@ export class AuthService {
     this.loadStoredUser();
   }
 
-  login(credentials: LoginRequest): Observable<AuthResponse> {
+  /**
+   * Login : Authentifie l'utilisateur et récupère 
+   * directement le profil (avec userId) inclus dans la réponse.
+   */
+  login(credentials: LoginRequest): Observable<User> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
-      tap(response => this.handleAuth(response))
-    );
-  }
+      tap(response => {
+        // 1. Stockage du token
+        this.storeToken(response.token);
 
-  register(userData: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, userData).pipe(
-      tap(response => this.handleAuth(response))
+        // 2. Utilisation du VRAI utilisateur renvoyé par le backend
+        if (response.user) {
+          this.setCurrentUser(response.user);
+        }
+      }),
+      // On retourne l'utilisateur pour le composant
+      map(response => response.user)
     );
   }
 
   /**
-   * Fetches the currently authenticated user's details.
-   * Sends the JWT token in the Authorization header.
+   * Register : Crée un compte et récupère le profil immédiatement.
    */
-  fetchCurrentUser(): Observable<User> {
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${this.getToken()}`);
-    return this.http.get<User>(`${this.apiUrl}/me`, { headers }).pipe(
-      tap(user => {
-        this.currentUserSubject.next(user);
-        if (this.isBrowser) {
-          localStorage.setItem('current_user', JSON.stringify(user));
+  register(userData: RegisterRequest): Observable<User> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, userData).pipe(
+      tap(response => {
+        this.storeToken(response.token);
+
+        if (response.user) {
+          this.setCurrentUser(response.user);
         }
-      })
+      }),
+      map(response => response.user)
     );
   }
 
- private handleAuth(response: AuthResponse): void {
-  this.storeToken(response.token);
-  // After storing token, fetch the user details
-  this.fetchCurrentUser().subscribe({
-    next: (user) => {
-      // Set flag for new user welcome flow (only for registration, not login)
-      // We need to know if this was a registration. We can't differentiate here.
-      // So we'll move the flag setting to the LoginComponent after successful registration.
-    },
-    error: (err) => {
-      console.error('Failed to fetch user after auth', err);
+  /**
+   * fetchCurrentUser : Retourne l'utilisateur actuel sans appel API
+   * car il est déjà mis à jour au login/register.
+   */
+  fetchCurrentUser(): Observable<User | null> {
+    return of(this.currentUserSubject.value);
+  }
+
+  private setCurrentUser(user: User): void {
+    this.currentUserSubject.next(user);
+    if (this.isBrowser) {
+      localStorage.setItem('current_user', JSON.stringify(user));
     }
-  });
-}
+  }
 
   private storeToken(token: string): void {
     if (this.isBrowser) {
@@ -112,10 +102,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    if (this.isBrowser) {
-      return localStorage.getItem('auth_token');
-    }
-    return null;
+    return this.isBrowser ? localStorage.getItem('auth_token') : null;
   }
 
   logout(): void {
@@ -134,32 +121,38 @@ export class AuthService {
   private loadStoredUser(): void {
     if (this.isBrowser) {
       const storedUser = localStorage.getItem('current_user');
-      if (storedUser) {
-        this.currentUserSubject.next(JSON.parse(storedUser));
+      if (storedUser && storedUser !== 'undefined') {
+        try {
+          this.currentUserSubject.next(JSON.parse(storedUser));
+        } catch (e) {
+          console.error("Erreur de parsing de l'utilisateur stocké", e);
+          this.logout();
+        }
       }
     }
   }
 
-  // Inside AuthService class, add these methods:
-updateProfile(data: UpdateUserRequest): Observable<any> {
-  return this.http.put<any>(`${this.apiUrl.replace('/auth', '')}/users/profile`, data);
-}
-changePassword(data: ChangePasswordRequest): Observable<any> {
-  return this.http.put(`${this.apiUrl.replace('/auth', '')}/users/change-password`, data);
-}
+  // --- Méthodes de gestion de profil ---
 
-deleteAccount(): Observable<any> {
-  return this.http.delete(`${this.apiUrl.replace('/auth', '')}/users/profile`);
-}
+  updateProfile(data: UpdateUserRequest): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl.replace('/auth', '')}/users/profile`, data);
+  }
 
+  changePassword(data: ChangePasswordRequest): Observable<any> {
+    return this.http.put(`${this.apiUrl.replace('/auth', '')}/users/change-password`, data);
+  }
 
-uploadProfilePicture(file: File): Observable<{ profilePicture: string }> {
-  const formData = new FormData();
-  formData.append('file', file);
-  return this.http.post<{ profilePicture: string }>(`${this.apiUrl.replace('/auth', '')}/users/profile/picture`, formData);
-}
+  deleteAccount(): Observable<any> {
+    return this.http.delete(`${this.apiUrl.replace('/auth', '')}/users/profile`);
+  }
 
-removeProfilePicture(): Observable<any> {
-  return this.http.delete(`${this.apiUrl.replace('/auth', '')}/users/profile/picture`);
-}
+  uploadProfilePicture(file: File): Observable<{ profilePicture: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ profilePicture: string }>(`${this.apiUrl.replace('/auth', '')}/users/profile/picture`, formData);
+  }
+
+  removeProfilePicture(): Observable<any> {
+    return this.http.delete(`${this.apiUrl.replace('/auth', '')}/users/profile/picture`);
+  }
 }

@@ -1,12 +1,17 @@
 package com.yourteam.communicationservice.Controller;
 
-
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile; // Manquant
 import com.yourteam.communicationservice.entity.Message;
 import com.yourteam.communicationservice.service.MessageService;
+import com.yourteam.communicationservice.service.ContentFilterService;
+
+import java.io.IOException;
+import java.nio.file.Files; // Manquant
+import java.nio.file.Path;  // Manquant
+import java.nio.file.Paths; // Manquant
 import java.util.List;
 
 @RestController
@@ -15,36 +20,58 @@ import java.util.List;
 public class MessageController {
 
     private final MessageService messageService;
+    private final ContentFilterService contentFilterService;
 
-    // URL: POST http://localhost:9000/communication-service/api/messages/1
+    @GetMapping("/forbidden-words")
+    public ResponseEntity<List<String>> getForbiddenWords() {
+        return ResponseEntity.ok(contentFilterService.getForbiddenWords());
+    }
+
     @PostMapping("/{conversationId}")
     public ResponseEntity<Message> sendMessage(
             @PathVariable Long conversationId,
-            @RequestBody Message message) {
+            @RequestParam(value = "senderId") String senderId,
+            @RequestParam(value = "content", required = false) String content,
+            @RequestParam(value = "file", required = false) MultipartFile file) throws IOException {
+
+        // Note: Assure-toi que ton entité Message possède bien l'annotation @Builder ou remplace par un "new Message()"
+        Message message = new Message();
+        message.setSenderId(senderId);
+        message.setContent(content != null ? content : "");
+
+        if (file != null && !file.isEmpty()) {
+            // Création du nom de fichier unique
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            // Chemin de stockage (crée un dossier 'uploads' à la racine de ton projet)
+            Path path = Paths.get("uploads/" + fileName);
+            Files.createDirectories(path.getParent());
+            Files.write(path, file.getBytes());
+
+            // Mise à jour des infos du message avec les détails du fichier
+            message.setFileName(file.getOriginalFilename());
+            message.setFileType(file.getContentType());
+            message.setFileUrl("/uploads/" + fileName);
+        }
+
         return ResponseEntity.ok(messageService.sendMessage(conversationId, message));
     }
 
-    // URL: GET http://localhost:9000/communication-service/api/messages/conversation/1
     @GetMapping("/conversation/{conversationId}")
     public ResponseEntity<List<Message>> getMessages(@PathVariable Long conversationId) {
         return ResponseEntity.ok(messageService.getMessagesByConversation(conversationId));
     }
 
-
-    // Modifier un message : PUT http://localhost:9000/communication-service/api/messages/{id}
     @PutMapping("/{id}")
     public ResponseEntity<Message> updateMessage(@PathVariable Long id, @RequestBody String newContent) {
         return ResponseEntity.ok(messageService.updateMessage(id, newContent));
     }
 
-    // Supprimer un message : DELETE http://localhost:9000/communication-service/api/messages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMessage(@PathVariable Long id) {
         messageService.deleteMessage(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Marquer comme lu : PATCH http://localhost:9000/communication-service/api/messages/{id}/read
     @PatchMapping("/{id}/read")
     public ResponseEntity<Message> markAsRead(@PathVariable Long id) {
         return ResponseEntity.ok(messageService.markAsRead(id));
