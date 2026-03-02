@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.activities.dto.ActivityDTO;
 import tn.esprit.activities.dto.ActivityWithUserDataDTO;
+import tn.esprit.activities.dto.RecommendRequest;
 import tn.esprit.activities.dto.UserActivityDTO;
 import tn.esprit.activities.service.ActivityService;
 
@@ -44,5 +45,16 @@ public class UserActivityController {
     public ResponseEntity<ActivityDTO> rateActivity(
             @PathVariable String userId, @PathVariable String activityId, @RequestParam int rating) {
         return ResponseEntity.ok(activityService.rateActivity(userId, activityId, rating));
+    }
+
+    @PostMapping("/recommend")
+    public ResponseEntity<Void> recommend(@RequestBody RecommendRequest request) {
+        activityService.recommendActivity(request.getDoctorId(), request.getPatientId(), request.getActivityId());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/recommendations/{patientId}")
+    public ResponseEntity<List<ActivityDTO>> getRecommendations(@PathVariable String patientId) {
+        return ResponseEntity.ok(activityService.getRecommendationsForPatient(patientId));
     }
 }

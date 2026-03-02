@@ -50,6 +50,11 @@ export interface ActivityWithUserData {
   location?: string;
   startTime?: string;
   monitoredBy?: string;
+  detailsId?: string;   
+  recommendedByDoctor?: boolean;    
+  doctorName?: string;
+  doctorPicture?: string;     // <-- add this
+
 
   // Detail fields
   instructions: string[];
@@ -122,6 +127,8 @@ export interface ActivityWithDetails extends Activity {
   supervision: string;
   benefits: string[];
   precautions: string[];
+  detailsId?: string;                      // <-- add this
+
 }
 @Injectable({
   providedIn: 'root'
@@ -129,7 +136,7 @@ export interface ActivityWithDetails extends Activity {
 export class ActivityService {
  // private apiUrl = 'http://localhost:8092/EverCare'; // direct to microservice
   // New gateway URL
-  private apiUrl = 'http://localhost:8089/EverCare';
+  public apiUrl = 'http://localhost:8089/EverCare';
 
   constructor(private http: HttpClient) {}
 
@@ -195,4 +202,30 @@ export class ActivityService {
   rateActivity(userId: string, activityId: string, rating: number): Observable<Activity> {
     return this.http.post<Activity>(`${this.apiUrl}/activities/user/${userId}/activity/${activityId}/rate?rating=${rating}`, {});
   }
+
+  // In activity.service.ts
+
+uploadImage(file: File): Observable<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return this.http.post<string>(`${this.apiUrl}/admin/uploads/image`, formData, {
+    responseType: 'text' as 'json'  // Because server returns plain text URL
+  });
+}
+
+
+
+// Translate an activity (returns translated fields)
+translateActivity(activityId: string, targetLang: string = 'fr'): Observable<any> {
+  return this.http.post(`${this.apiUrl}/activities/translate/${activityId}`, { targetLang });
+}
+
+// Summarize an activity (returns plain text)
+summarizeActivity(activityId: string): Observable<string> {
+  return this.http.get(`${this.apiUrl}/activities/summarize/${activityId}`, { responseType: 'text' });
+}
+
+recommendActivity(doctorId: string, patientId: string, activityId: string): Observable<any> {
+  return this.http.post(`${this.apiUrl}/activities/recommend`, { doctorId, patientId, activityId });
+}
 }

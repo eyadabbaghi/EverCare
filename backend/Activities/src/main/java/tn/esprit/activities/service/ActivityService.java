@@ -3,16 +3,23 @@ package tn.esprit.activities.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tn.esprit.activities.client.UserServiceClient;
 import tn.esprit.activities.dto.*;
 import tn.esprit.activities.entity.Activity;
 import tn.esprit.activities.entity.ActivityDetails;
+import tn.esprit.activities.entity.ActivityRecommendation;
 import tn.esprit.activities.entity.UserActivity;
+import tn.esprit.activities.exception.ResourceNotFoundException;
 import tn.esprit.activities.repository.ActivityDetailsRepository;
+import tn.esprit.activities.repository.ActivityRecommendationRepository;
 import tn.esprit.activities.repository.ActivityRepository;
 import tn.esprit.activities.repository.UserActivityRepository;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +29,8 @@ public class ActivityService {
     private final ActivityRepository activityRepository;
     private final ActivityDetailsRepository detailsRepository;
     private final UserActivityRepository userActivityRepository;
+    private final ActivityRecommendationRepository  recommendationRepository;
+    private final UserServiceClient userServiceClient;
 
     // ---------- Admin: Activity CRUD ----------
 
@@ -146,10 +155,30 @@ public class ActivityService {
     public List<ActivityWithUserDataDTO> getActivitiesForUser(String userId) {
         List<Activity> activities = activityRepository.findAll();
         List<UserActivity> userActivities = userActivityRepository.findByUserId(userId);
-        return activities.stream()
-                .map(activity -> mapToWithUserData(activity, userActivities))
-                .collect(Collectors.toList());
+        List<ActivityRecommendation> recommendations = recommendationRepository.findByPatientId(userId);
+        Set<String> recommendedIds = recommendations.stream()
+                .map(rec -> rec.getActivity().getId()).collect(Collectors.toSet());
+        Map<String, UserDto> doctorCache = new HashMap<>();
+
+        return activities.stream().map(activity -> {
+            ActivityWithUserDataDTO dto = mapToWithUserData(activity, userActivities);
+            boolean isRecommended = recommendedIds.contains(activity.getId());
+            dto.setRecommendedByDoctor(isRecommended);
+            if (isRecommended) {
+                ActivityRecommendation rec = recommendations.stream()
+                        .filter(r -> r.getActivity().getId().equals(activity.getId()))
+                        .findFirst().orElse(null);
+                if (rec != null) {
+                    UserDto doctor = doctorCache.computeIfAbsent(rec.getDoctorId(),
+                            id -> userServiceClient.getUserById(id));
+                    dto.setDoctorName(doctor.getName());
+                    dto.setDoctorPicture(doctor.getProfilePicture());
+                }
+            }
+            return dto;
+        }).collect(Collectors.toList());
     }
+
 
     public ActivityWithUserDataDTO getActivityForUser(String userId, String activityId) {
         Activity activity = activityRepository.findById(activityId)
@@ -315,5 +344,30 @@ public class ActivityService {
             dto.setUserRating(null);
         }
         return dto;
+    }
+
+
+    public Activity getActivityEntityById(String id) {
+        return activityRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity not found with id: " + id));
+    }
+
+    public List<ActivityDetails> getDetailsEntitiesByActivityId(String activityId) {
+        return detailsRepository.findByActivityId(activityId);
+    }
+
+    @Transactional
+    public void recommendActivity(String doctorId, String patientId, String activityId) {
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new RuntimeException("Activity not found"));
+        ActivityRecommendation rec = ActivityRecommendation.builder()
+                .doctorId(doctorId).patientId(patientId).activity(activity)
+                .recommendedAt(LocalDateTime.now()).build();
+        recommendationRepository.save(rec);
+    }
+
+    public List<ActivityDTO> getRecommendationsForPatient(String patientId) {
+        return recommendationRepository.findByPatientId(patientId).stream()
+                .map(rec -> mapToDTO(rec.getActivity())).collect(Collectors.toList());
     }
 }

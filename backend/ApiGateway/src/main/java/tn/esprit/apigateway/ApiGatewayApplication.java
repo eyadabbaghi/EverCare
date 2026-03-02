@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-
 public class ApiGatewayApplication {
 
     public static void main(String[] args) {
@@ -20,7 +19,14 @@ public class ApiGatewayApplication {
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
                 .route("activities-service", r -> r
-                        .path("/EverCare/activities/**", "/EverCare/admin/activities/**")
+                        .path(
+                                "/EverCare/activities/**",
+                                "/EverCare/admin/activities/**",
+                                "/EverCare/admin/activity-details/**",
+                                "/EverCare/admin/uploads/**",
+                                "/EverCare/uploads/**"
+                        )
+                        .filters(f -> f.rewritePath("/EverCare/(?<segment>.*)", "/${segment}"))
                         .uri("lb://ACTIVITIES-SERVICE"))
                 .route("alerts-service", r -> r
                         .path("/EverCare/incidents/**", "/EverCare/alerts/**")

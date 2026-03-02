@@ -3,7 +3,6 @@ package tn.esprit.user.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tn.esprit.user.clients.ActivitiesClient;
 import tn.esprit.user.dto.*;
 import tn.esprit.user.entity.User;
 import tn.esprit.user.entity.UserRole;
@@ -18,7 +17,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final KeycloakAdminClient keycloakAdminClient;
-    private final ActivitiesClient activitiesClient;   // new Feign client
 
     @Transactional
     public void register(RegisterRequest request) {
@@ -263,10 +261,6 @@ public class UserService {
         return userRepository.searchByRoleAndQuery(query, role);
     }
 
-    // New method using Feign client to get activities for a user
-    public List<ActivityDTO> getUserActivities(String userId) {
-        return activitiesClient.getActivitiesForUser(userId);
-    }
 
     // NEW: find by userId
     public User findByUserId(String userId) {

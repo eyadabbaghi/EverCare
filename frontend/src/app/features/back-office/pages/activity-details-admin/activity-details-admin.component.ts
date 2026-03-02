@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, FormArray, AbstractControl, Validat
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { ActivityService, Activity, ActivityDetails, UpdateActivityRequest, UpdateActivityDetailsRequest } from '../../../../core/services/activity.service';
+import { ImageCroppedEvent } from 'ngx-image-cropper';
 
 // Custom validator: at least one stage selected
 function atLeastOneStage(control: AbstractControl): ValidationErrors | null {
@@ -31,6 +32,12 @@ export class ActivityDetailsAdminComponent implements OnInit {
   difficultyLevels: ('Easy' | 'Moderate' | 'Challenging')[] = ['Easy', 'Moderate', 'Challenging'];
   activityTypes = ['Relaxation', 'Cognitive', 'Physical', 'Social', 'Creative'];
 
+  // Image upload & cropper
+  selectedFile: File | null = null;
+  imageChangedEvent: any = '';
+  croppedImage: any = '';
+  showCropper = false;
+
   constructor(
     private fb: FormBuilder,
     private readonly route: ActivatedRoute,
@@ -44,7 +51,7 @@ export class ActivityDetailsAdminComponent implements OnInit {
       duration: [0, [Validators.required, Validators.min(1), Validators.max(480)]],
       scheduledTime: [''],
       description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(1000)]],
-      imageUrl: ['', [Validators.required, Validators.pattern('https?://.+')]],
+      imageUrl: [''],
       doctorSuggested: [false],
       location: [''],
       startTime: [''],
@@ -165,6 +172,64 @@ export class ActivityDetailsAdminComponent implements OnInit {
     this.detailsForm.get('recommendedStage')?.markAsTouched();
   }
 
+  // Image cropper methods
+  onFileSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        this.toastr.warning('Please select an image file');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        this.toastr.warning('File size must be less than 5MB');
+        return;
+      }
+      // Store the event for the cropper
+      this.imageChangedEvent = event;
+      this.showCropper = true;
+      // Clear any previously cropped image
+      this.croppedImage = '';
+      // Do NOT set selectedFile yet – we will set it after crop confirmation
+    }
+  }
+
+  imageCropped(event: ImageCroppedEvent) {
+    this.croppedImage = event.blob;
+  }
+
+  imageLoaded() {
+    this.showCropper = true;
+  }
+
+  loadImageFailed() {
+    this.toastr.error('Failed to load image');
+  }
+
+  cancelCrop(): void {
+    this.showCropper = false;
+    this.imageChangedEvent = '';
+    this.croppedImage = '';
+    this.selectedFile = null;
+  }
+
+  confirmCrop(): void {
+    if (this.croppedImage) {
+      // Preserve original file type if possible; default to jpeg
+      const originalFile = this.imageChangedEvent?.target?.files[0];
+      const fileType = originalFile?.type || 'image/jpeg';
+      const fileExt = fileType === 'image/png' ? 'png' : 'jpg';
+      const fileName = originalFile?.name || `cropped.${fileExt}`;
+
+      const croppedFile = new File([this.croppedImage], fileName, { type: fileType });
+      this.selectedFile = croppedFile;
+      this.showCropper = false;
+      this.imageChangedEvent = '';
+      this.toastr.success('Image cropped successfully');
+    } else {
+      this.toastr.warning('Please crop the image first');
+    }
+  }
+
   save(): void {
     if (!this.activity) return;
 
@@ -178,54 +243,75 @@ export class ActivityDetailsAdminComponent implements OnInit {
     const activityValue = this.activityForm.value;
     const detailsValue = this.detailsForm.value;
 
-    const activityUpdate: UpdateActivityRequest = {
-      name: activityValue.name,
-      type: activityValue.type,
-      duration: activityValue.duration,
-      scheduledTime: activityValue.scheduledTime,
-      description: activityValue.description,
-      imageUrl: activityValue.imageUrl,
-      doctorSuggested: activityValue.doctorSuggested,
-      location: activityValue.location,
-      startTime: activityValue.startTime,
-      monitoredBy: activityValue.monitoredBy,
+    const proceedWithSave = (imageUrl: string) => {
+      const activityUpdate: UpdateActivityRequest = {
+        name: activityValue.name,
+        type: activityValue.type,
+        duration: activityValue.duration,
+        scheduledTime: activityValue.scheduledTime,
+        description: activityValue.description,
+        imageUrl: imageUrl,
+        doctorSuggested: activityValue.doctorSuggested,
+        location: activityValue.location,
+        startTime: activityValue.startTime,
+        monitoredBy: activityValue.monitoredBy,
+      };
+
+      this.activityService.updateActivity(this.activity!.id, activityUpdate).subscribe({
+        next: (updatedActivity) => {
+          this.activity = updatedActivity;
+          if (this.details) {
+            const detailsUpdate: UpdateActivityDetailsRequest = {
+              instructions: detailsValue.instructions.map((g: any) => g.value).filter((s: string) => s.trim().length > 0),
+              difficulty: detailsValue.difficulty,
+              recommendedStage: detailsValue.recommendedStage,
+              frequency: detailsValue.frequency,
+              supervision: detailsValue.supervision,
+              benefits: detailsValue.benefits.map((g: any) => g.value).filter((s: string) => s.trim().length > 0),
+              precautions: detailsValue.precautions.map((g: any) => g.value).filter((s: string) => s.trim().length > 0),
+            };
+            this.activityService.updateDetails(this.details.id, detailsUpdate).subscribe({
+              next: (updatedDetails) => {
+                this.details = updatedDetails;
+                this.isEditing = false;
+                this.selectedFile = null;
+                this.toastr.success('Activity updated');
+              },
+              error: (err) => {
+                console.error('Details update failed', err);
+                this.toastr.warning('Activity updated but details failed');
+                this.isEditing = false;
+                this.selectedFile = null;
+              }
+            });
+          } else {
+            this.isEditing = false;
+            this.selectedFile = null;
+            this.toastr.success('Activity updated');
+          }
+        },
+        error: (err) => {
+          console.error('Update failed', err);
+          this.toastr.error('Update failed');
+          this.selectedFile = null;
+        }
+      });
     };
 
-    this.activityService.updateActivity(this.activity.id, activityUpdate).subscribe({
-      next: (updatedActivity) => {
-        this.activity = updatedActivity;
-        if (this.details) {
-          const detailsUpdate: UpdateActivityDetailsRequest = {
-            instructions: detailsValue.instructions.map((g: any) => g.value).filter((s: string) => s.trim().length > 0),
-            difficulty: detailsValue.difficulty,
-            recommendedStage: detailsValue.recommendedStage,
-            frequency: detailsValue.frequency,
-            supervision: detailsValue.supervision,
-            benefits: detailsValue.benefits.map((g: any) => g.value).filter((s: string) => s.trim().length > 0),
-            precautions: detailsValue.precautions.map((g: any) => g.value).filter((s: string) => s.trim().length > 0),
-          };
-          this.activityService.updateDetails(this.details.id, detailsUpdate).subscribe({
-            next: (updatedDetails) => {
-              this.details = updatedDetails;
-              this.isEditing = false;
-              this.toastr.success('Activity updated');
-            },
-            error: (err) => {
-              console.error('Details update failed', err);
-              this.toastr.warning('Activity updated but details failed');
-              this.isEditing = false;
-            }
-          });
-        } else {
-          this.isEditing = false;
-          this.toastr.success('Activity updated');
+    if (this.selectedFile) {
+      this.activityService.uploadImage(this.selectedFile).subscribe({
+        next: (imageUrl) => {
+          proceedWithSave(imageUrl);
+        },
+        error: (err) => {
+          console.error('Image upload failed', err);
+          this.toastr.error('Image upload failed, activity not saved');
+          this.selectedFile = null;
         }
-      },
-      error: (err) => {
-        console.error('Update failed', err);
-        this.toastr.error('Update failed');
-      }
-    });
+      });
+    } else {
+      proceedWithSave(this.activity.imageUrl);
+    }
   }
 
   deleteAndBack(): void {
@@ -249,5 +335,11 @@ export class ActivityDetailsAdminComponent implements OnInit {
 
   trackByIndex(index: number, item: any): number {
     return index;
+  }
+
+  getImageUrl(relativePath: string): string {
+    if (!relativePath) return '/assets/logo.png';
+    if (relativePath.startsWith('http')) return relativePath;
+    return `${this.activityService.apiUrl}${relativePath}`;
   }
 }
