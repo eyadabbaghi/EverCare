@@ -19,34 +19,37 @@ public class UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
+    /**
+     * MODIFIÉ : Retourne maintenant le token ET les infos utilisateur (DTO)
+     */
     public AuthResponse register(RegisterRequest request) {
-        // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
-        // Validate password strength
         if (!isStrongPassword(request.getPassword())) {
             throw new RuntimeException("Password must be at least 8 characters long, contain an uppercase letter, a digit, and a special character (!@#$%^&*)");
         }
 
-        // Create user
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
-                .isVerified(true) // For simplicity, auto-verify
+                .isVerified(true)
                 .build();
 
         userRepository.save(user);
 
-        // Generate token
         String token = jwtUtil.generateToken(user.getEmail());
 
-        return new AuthResponse(token);
+        // On retourne l'objet complet pour le Frontend
+        return new AuthResponse(token, mapToDto(user));
     }
 
+    /**
+     * MODIFIÉ : Retourne maintenant le token ET les infos utilisateur (DTO)
+     */
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -56,7 +59,28 @@ public class UserService {
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token);
+
+        // On retourne l'objet complet pour le Frontend
+        return new AuthResponse(token, mapToDto(user));
+    }
+
+    /**
+     * AJOUTÉ : Convertit l'entité User en DTO pour le Frontend
+     * C'est ici que le userId est récupéré pour le Chat.
+     */
+    private UserDto mapToDto(User user) {
+        UserDto dto = new UserDto();
+        dto.setUserId(user.getUserId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        dto.setPhone(user.getPhone());
+        dto.setVerified(user.isVerified());
+        dto.setCreatedAt(user.getCreatedAt());
+        dto.setDateOfBirth(user.getDateOfBirth());
+        dto.setEmergencyContact(user.getEmergencyContact());
+        dto.setProfilePicture(user.getProfilePicture());
+        return dto;
     }
 
     private boolean isStrongPassword(String password) {
@@ -70,8 +94,6 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
-
-
 
     public User updateUser(String email, UpdateUserRequest request) {
         User user = findByEmail(email);
@@ -91,7 +113,6 @@ public class UserService {
             user.setPhone(request.getPhone());
         }
 
-        // New fields
         if (request.getDateOfBirth() != null) {
             user.setDateOfBirth(request.getDateOfBirth());
         }
@@ -128,7 +149,6 @@ public class UserService {
         userRepository.delete(user);
     }
 
-
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
@@ -155,5 +175,10 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         userRepository.delete(user);
+    }
+
+    public User findById(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
     }
 }

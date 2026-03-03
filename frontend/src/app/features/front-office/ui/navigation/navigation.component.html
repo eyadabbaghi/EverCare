@@ -99,18 +99,16 @@
           Blog
         </button>
 
-        <!-- Messages -->
-        <button
-          type="button"
-          (click)="navigate('/messages')"
-          [ngClass]="isActive('/messages')
-            ? 'bg-[#F3E8FF] text-[#7C3AED]'
-            : 'text-[#6B5B8C] hover:bg-[#F3E8FF] hover:text-[#7C3AED]'"
-          class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition"
-        >
+        <!-- Cummunication -->
+        <button type="button"
+                (click)="navigate('/communication')"
+                [ngClass]="isActive('/communication')
+     ? 'bg-[#F3E8FF] text-[#7C3AED]'
+     : 'text-[#6B5B8C] hover:bg-[#F3E8FF] hover:text-[#7C3AED]'"
+                class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-              d="M8 10h8M8 14h6M21 12c0 4-4 8-9 8a9.8 9.8 0 01-4-.8L3 21l1.8-4A8 8 0 1112 4c5 0 9 4 9 8z"/>
+                  d="M8 10h8M8 14h6M21 12c0 4-4 8-9 8a9.8 9.8 0 01-4-.8L3 21l1.8-4A8 8 0 1112 4c5 0 9 4 9 8z" />
           </svg>
           Messages
         </button>

@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "conversations")
@@ -33,6 +34,7 @@ public class Conversation {
 
     // Dans ta classe Conversation
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL)
+    @JsonManagedReference // <--- Jackson va suivre ce lien
     private List<Message> messages;
 
     @PrePersist

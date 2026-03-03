@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { AuthService, LoginRequest, RegisterRequest } from './auth.service';
+import { AuthService, LoginRequest, RegisterRequest, User } from './auth.service';
 
 // Custom validator for password strength (matches backend rules)
 export function strongPasswordValidator(): ValidatorFn {
@@ -37,7 +37,6 @@ export class LoginComponent implements OnInit {
     { value: 'PATIENT', label: 'Patient' },
     { value: 'CAREGIVER', label: 'Caregiver' },
     { value: 'DOCTOR', label: 'Doctor' },
-    
   ];
 
   constructor(
@@ -45,7 +44,7 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private toastr: ToastrService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initForms();
@@ -69,6 +68,10 @@ export class LoginComponent implements OnInit {
     this.activeTab = tab;
   }
 
+  /**
+   * MODIFIÉ : Utilise maintenant le retour de l'utilisateur complet
+   * pour garantir que les données sont là avant la redirection.
+   */
   handleLogin(): void {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
@@ -79,8 +82,10 @@ export class LoginComponent implements OnInit {
     const credentials: LoginRequest = this.loginForm.value;
 
     this.authService.login(credentials).subscribe({
-      next: () => {
-        this.toastr.success('Login successful!', 'Welcome');
+      next: (user: User) => {
+        console.log('Login réussi, utilisateur récupéré:', user);
+        this.toastr.success(`Welcome back, ${user.name}!`, 'Success');
+        // Redirection vers la racine (Home) seulement quand l'utilisateur est chargé
         this.router.navigate(['/']);
       },
       error: (err) => {
@@ -95,33 +100,36 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  /**
+   * MODIFIÉ : Attend également l'utilisateur complet après l'inscription
+   */
   handleRegister(): void {
-  if (this.registerForm.invalid) {
-    this.registerForm.markAllAsTouched();
-    return;
-  }
-
-  this.isLoading = true;
-  const userData: RegisterRequest = this.registerForm.value;
-
-  this.authService.register(userData).subscribe({
-    next: () => {
-      // Set flag for new user flow
-      localStorage.setItem('showWelcomeFlow', 'true');
-      this.toastr.success('Registration successful!', 'Welcome');
-      this.router.navigate(['/']);
-    },
-    error: (err) => {
-      console.error('Registration error', err);
-      const errorMsg = err.error?.message || 'Registration failed. Please try again.';
-      this.toastr.error(errorMsg, 'Error');
-      this.isLoading = false;
-    },
-    complete: () => {
-      this.isLoading = false;
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      return;
     }
-  });
-}
+
+    this.isLoading = true;
+    const userData: RegisterRequest = this.registerForm.value;
+
+    this.authService.register(userData).subscribe({
+      next: (user: User) => {
+        localStorage.setItem('showWelcomeFlow', 'true');
+        this.toastr.success('Registration successful!', 'Welcome');
+        // Redirection sécurisée
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        console.error('Registration error', err);
+        const errorMsg = err.error?.message || 'Registration failed. Please try again.';
+        this.toastr.error(errorMsg, 'Error');
+        this.isLoading = false;
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
+    });
+  }
 
   handleGoogleLogin(): void {
     this.toastr.info('Google login not implemented yet', 'Info');

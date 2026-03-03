@@ -16,6 +16,19 @@ public class conversationservice {
 
     // Créer une conversation privée [cite: 4]
     public Conversation createConversation(Conversation conversation) {
+        // Vérification de l'existence dans les deux sens
+        boolean exists = conversationRepository.existsByUser1IdAndUser2Id(conversation.getUser1Id(), conversation.getUser2Id()) ||
+                conversationRepository.existsByUser1IdAndUser2Id(conversation.getUser2Id(), conversation.getUser1Id());
+
+        if (exists) {
+            // Optionnel : Récupérer et retourner la conversation existante au lieu d'une erreur
+            return conversationRepository.findByUser1IdOrUser2Id(conversation.getUser1Id(), conversation.getUser1Id())
+                    .stream()
+                    .filter(c -> (c.getUser1Id().equals(conversation.getUser2Id()) || c.getUser2Id().equals(conversation.getUser2Id())))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Erreur lors de la récupération de la conversation existante"));
+        }
+
         return conversationRepository.save(conversation);
     }
 

@@ -1,12 +1,13 @@
 package com.yourteam.communicationservice.Controller;
 
-
-
+import com.yourteam.communicationservice.DTO.MessageSearchDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import com.yourteam.communicationservice.entity.Message;
 import com.yourteam.communicationservice.service.MessageService;
+import com.yourteam.communicationservice.service.ContentFilterService;
 import java.util.List;
 
 @RestController
@@ -15,8 +16,13 @@ import java.util.List;
 public class MessageController {
 
     private final MessageService messageService;
+    private final ContentFilterService contentFilterService;
 
-    // URL: POST http://localhost:9000/communication-service/api/messages/1
+    @GetMapping("/forbidden-words")
+    public ResponseEntity<List<String>> getForbiddenWords() {
+        return ResponseEntity.ok(contentFilterService.getForbiddenWords());
+    }
+
     @PostMapping("/{conversationId}")
     public ResponseEntity<Message> sendMessage(
             @PathVariable Long conversationId,
@@ -24,29 +30,39 @@ public class MessageController {
         return ResponseEntity.ok(messageService.sendMessage(conversationId, message));
     }
 
-    // URL: GET http://localhost:9000/communication-service/api/messages/conversation/1
+    // --- NOUVEL ENDPOINT POUR L'UPLOAD ---
+    @PostMapping("/{conversationId}/upload")
+    public ResponseEntity<Message> uploadFile(
+            @PathVariable Long conversationId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("senderId") String senderId) {
+        return ResponseEntity.ok(messageService.saveFile(conversationId, file, senderId));
+    }
+
     @GetMapping("/conversation/{conversationId}")
     public ResponseEntity<List<Message>> getMessages(@PathVariable Long conversationId) {
         return ResponseEntity.ok(messageService.getMessagesByConversation(conversationId));
     }
 
-
-    // Modifier un message : PUT http://localhost:9000/communication-service/api/messages/{id}
     @PutMapping("/{id}")
     public ResponseEntity<Message> updateMessage(@PathVariable Long id, @RequestBody String newContent) {
         return ResponseEntity.ok(messageService.updateMessage(id, newContent));
     }
 
-    // Supprimer un message : DELETE http://localhost:9000/communication-service/api/messages/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMessage(@PathVariable Long id) {
         messageService.deleteMessage(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Marquer comme lu : PATCH http://localhost:9000/communication-service/api/messages/{id}/read
     @PatchMapping("/{id}/read")
     public ResponseEntity<Message> markAsRead(@PathVariable Long id) {
         return ResponseEntity.ok(messageService.markAsRead(id));
+    }
+    @GetMapping("/search")
+    public ResponseEntity<List<MessageSearchDTO>> searchGlobalMessages(
+            @RequestParam String userId,
+            @RequestParam String query) {
+        return ResponseEntity.ok(messageService.searchGlobally(userId, query));
     }
 }

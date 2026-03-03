@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import tn.esprit.user.dto.ChangePasswordRequest;
 import tn.esprit.user.dto.UpdateUserRequest;
 import tn.esprit.user.dto.UserDto;
@@ -11,40 +13,58 @@ import tn.esprit.user.entity.User;
 import tn.esprit.user.repository.UserRepository;
 import tn.esprit.user.service.UserService;
 import tn.esprit.user.security.JwtUtil;
-import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*") // Autorise Angular
 public class UserController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
 
+    // --- RÉCUPÉRATION DES UTILISATEURS POUR LE CHAT ---
+
+    @GetMapping("/all")
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        // Récupère tous les utilisateurs via le service
+        List<User> users = userService.getAllUsers();
+        List<UserDto> dtos = users.stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserDto> getUserById(@PathVariable String userId) {
+        // Utilisation du repository au cas où le service cause une erreur de type
+        return userRepository.findById(userId)
+                .map(user -> ResponseEntity.ok(mapToDto(user)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // --- GESTION DU PROFIL ---
+
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody UpdateUserRequest request, Principal principal) {
         String email = principal.getName();
         User updatedUser = userService.updateUser(email, request);
         UserDto userDto = mapToDto(updatedUser);
-
-        // Generate a new token (always, or only if email changed)
         String newToken = jwtUtil.generateToken(updatedUser.getEmail());
 
-        // Return both updated user and new token
         Map<String, Object> response = new HashMap<>();
         response.put("user", userDto);
         response.put("token", newToken);
@@ -58,7 +78,6 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-
     @DeleteMapping("/profile")
     public ResponseEntity<?> deleteAccount(Principal principal) {
         try {
@@ -66,34 +85,18 @@ public class UserController {
             userService.deleteUser(email);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            e.printStackTrace(); // for debugging
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Failed to delete account: " + e.getMessage()));
         }
     }
-    private UserDto mapToDto(User user) {
-        UserDto dto = new UserDto();
-        dto.setUserId(user.getUserId());
-        dto.setName(user.getName());
-        dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole());
-        dto.setPhone(user.getPhone());
-        dto.setVerified(user.isVerified());
-        dto.setCreatedAt(user.getCreatedAt());
-        dto.setDateOfBirth(user.getDateOfBirth());
-        dto.setEmergencyContact(user.getEmergencyContact());
-        dto.setProfilePicture(user.getProfilePicture());
-        return dto;
-    }
+
+    // --- PHOTO DE PROFIL ---
 
     @PostMapping("/profile/picture")
     public ResponseEntity<?> uploadProfilePicture(@RequestParam("file") MultipartFile file, Principal principal) {
         String email = principal.getName();
         User user = userService.findByEmail(email);
-
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("File is empty");
-        }
+        if (file.isEmpty()) return ResponseEntity.badRequest().body("File is empty");
 
         try {
             String uploadDir = "uploads/profile-pictures/";
@@ -111,11 +114,8 @@ public class UserController {
             user.setProfilePicture(fileUrl);
             userRepository.save(user);
 
-            Map<String, String> response = new HashMap<>();
-            response.put("profilePicture", fileUrl);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of("profilePicture", fileUrl));
         } catch (IOException e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file");
         }
     }
@@ -127,5 +127,22 @@ public class UserController {
         user.setProfilePicture(null);
         userRepository.save(user);
         return ResponseEntity.ok().build();
+    }
+
+    // --- MAPPING ---
+
+    private UserDto mapToDto(User user) {
+        UserDto dto = new UserDto();
+        dto.setUserId(user.getUserId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+        dto.setPhone(user.getPhone());
+        dto.setVerified(user.isVerified());
+        dto.setCreatedAt(user.getCreatedAt());
+        dto.setDateOfBirth(user.getDateOfBirth());
+        dto.setEmergencyContact(user.getEmergencyContact());
+        dto.setProfilePicture(user.getProfilePicture());
+        return dto;
     }
 }
