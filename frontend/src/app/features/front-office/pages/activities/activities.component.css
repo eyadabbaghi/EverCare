@@ -5,3 +5,26 @@
   overflow: hidden;
 }
 
+.search-input {
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+/* Optional: animation for the search icon */
+.group:focus-within svg {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Smooth hover effects for cards */
+.border-2 {
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.border-2:hover:not(.bg-green-50) {
+  transform: translateY(-2px);
+}

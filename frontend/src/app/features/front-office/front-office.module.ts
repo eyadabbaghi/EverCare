@@ -28,6 +28,10 @@ import { AlzheimersAssessmentComponent } from './ui/alzheimers-assessment/alzhei
 import { ProfileComponent } from './pages/profile/profile.component';
 import { LucideAngularModule } from 'lucide-angular';
 import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
+import { SetupProfileComponent } from './pages/setup-profile/setup-profile.component';
+
+// 👇 ADD THIS IMPORT
+import { DoctorSearchModalComponent } from './pages/profile/doctor-search-modal.component';
 
 
 
@@ -56,7 +60,9 @@ import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
     AlzheimersAssessmentComponent,
     ProfileComponent,
     NewUserFlowComponent,
-    
+    SetupProfileComponent,
+    // 👇 ADD THIS COMPONENT
+    DoctorSearchModalComponent,
   ],
   imports: [
     CommonModule,
@@ -73,4 +79,4 @@ import { NewUserFlowComponent } from './pages/login/new-user-flow.component';
     AiAssistantComponent,
   ],
 })
-export class FrontOfficeModule { }
+export class FrontOfficeModule {}

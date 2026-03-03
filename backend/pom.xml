@@ -30,7 +30,8 @@
         <module>Activities</module>
         <module>Alerts</module>
         <module>User</module>
-        <module>communication-service</module>
+        <module>ApiGateway</module>
+        <module>Eureka-service</module>
         <!-- Comment these out until you actually create the folders -->
         <!-- <module>gateway-service</module> -->
         <!-- <module>auth-service</module> -->
@@ -72,6 +73,10 @@
             <artifactId>lombok</artifactId>
             <version>1.18.32</version> <!-- Latest stable -->
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
 

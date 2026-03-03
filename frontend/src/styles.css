@@ -1,3 +1,5 @@
+@import './styles/_purple-theme.css';
+
 @tailwind base;
 
 @tailwind components;
@@ -25,3 +27,6 @@
 .animate-float { animation: float 4s ease-in-out infinite; }
 
 
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
