@@ -6,17 +6,17 @@ import { User } from '../../front-office/pages/login/auth.service';
 
 // Imports pour le temps réel
 import SockJS from 'sockjs-client';
-import * as Stomp from 'stompjs';
+import { Client } from '@stomp/stompjs';
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
-  private gatewayUrl = 'http://localhost:9000/communication-service/api';
-  private userApiUrl = 'http://localhost:8096/EverCare/users';
+  private gatewayUrl = 'http://localhost:8089/communication-service/api';
+  private userApiUrl = 'http://localhost:8089/EverCare/users';
 
   // Point d'entrée WebSocket (Port 8085 pour test direct)
   private webSocketUrl = 'http://localhost:8085/ws-chat';
 
-  public uploadUrl = 'http://localhost:9000/communication-service/uploads/';
+  public uploadUrl = 'http://localhost:8089/communication-service/uploads/';
 
   private stompClient: any;
 
@@ -32,23 +32,23 @@ export class ChatService {
   watchMessages(conversationId: number): Observable<Message> {
     return new Observable(observer => {
       const socket = new (SockJS as any)(this.webSocketUrl);
-      this.stompClient = Stomp.over(socket);
-      this.stompClient.debug = () => { };
-
-      this.stompClient.connect({}, () => {
+      this.stompClient = new Client({ webSocketFactory: () => socket });
+      this.stompClient.onConnect = () => {
         this.stompClient.subscribe(`/topic/messages/${conversationId}`, (payload: any) => {
           if (payload.body) {
             const newMessage: Message = JSON.parse(payload.body);
             observer.next(newMessage);
           }
         });
-      }, (error: any) => {
+      };
+      this.stompClient.onStompError = (error: any) => {
         observer.error(error);
-      });
+      };
+      this.stompClient.activate();
 
       return () => {
         if (this.stompClient && this.stompClient.connected) {
-          this.stompClient.disconnect(() => { });
+          this.stompClient.deactivate();
         }
       };
     });
@@ -57,22 +57,23 @@ export class ChatService {
   watchCalls(conversationId: number): Observable<Call> {
     return new Observable(observer => {
       const socket = new (SockJS as any)(this.webSocketUrl);
-      const callStompClient = Stomp.over(socket);
-      callStompClient.debug = () => { };
+      const callStompClient = new Client({ webSocketFactory: () => socket });
 
-      callStompClient.connect({}, () => {
+      callStompClient.onConnect = () => {
         callStompClient.subscribe(`/topic/calls/${conversationId}`, (payload: any) => {
           if (payload.body) {
             observer.next(JSON.parse(payload.body));
           }
         });
-      }, (error: any) => {
+      };
+      callStompClient.onStompError = (error: any) => {
         observer.error(error);
-      });
+      };
+      callStompClient.activate();
 
       return () => {
         if (callStompClient && callStompClient.connected) {
-          callStompClient.disconnect(() => { });
+          callStompClient.deactivate();
         }
       };
     });

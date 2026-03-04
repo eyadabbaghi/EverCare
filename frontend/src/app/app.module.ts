@@ -74,7 +74,7 @@ import {CommonModule} from '@angular/common';
     LayoutsModule,
     BackOfficeModule,
     AppointmentsModule,
-    LucideAngularModule.pick({ Heart, Mail, Lock, User }),
+    LucideAngularModule.pick({Heart, Mail, Lock, User}),
     BrowserAnimationsModule,
     ToastrModule.forRoot({
       timeOut: 3000,
@@ -94,6 +94,7 @@ import {CommonModule} from '@angular/common';
     ReactiveFormsModule,
     RouterModule,
     CommonModule,
+    FrontOfficeModule,
 
   ],
   providers: [

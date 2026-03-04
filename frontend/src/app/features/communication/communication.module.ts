@@ -11,6 +11,7 @@ import { ChatComponent } from './pages/chat/chat.component';
     FormsModule,
     CommunicationRoutingModule
   ],
-  exports: [ChatComponent] // <--- CETTE LIGNE EST OBLIGATOIRE
+  exports: [ChatComponent]
+
 })
 export class CommunicationModule { }

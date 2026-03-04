@@ -48,7 +48,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
     { id: 'medical-folder', label: 'Medical Folder', route: '/medical-folder' },
     { id: 'alerts', label: 'Alerts', route: '/alerts' },
     { id: 'daily', label: 'Daily Me', route: '/daily-me' },
-    { id: 'communication', label: 'Messages', route: '/communication' }, // Doit matcher le path du routing
+    { id: 'communication', label: 'Messages', route: '/communication' },
   ];
 
   user: User | null = null;
@@ -436,5 +436,9 @@ export class NavigationComponent implements OnInit, OnDestroy {
   closeTaskAlert() {
     this.showTaskAlert = false;
     if (this.alertTimer) clearTimeout(this.alertTimer);
+  }
+
+  protected getSeverityClasses(severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL") {
+    return undefined;
   }
 }
