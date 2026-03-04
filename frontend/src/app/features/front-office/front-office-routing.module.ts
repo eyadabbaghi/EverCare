@@ -39,6 +39,11 @@ const routes: Routes = [
         path:"daily-me",
         loadChildren: () => import('../daily-me/daily-me.module').then(m => m.DailyMeModule)
 
+      },
+      {
+
+        path: 'communication',
+        loadChildren: () => import('../communication/communication.module').then(m => m.CommunicationModule)
       }
     ],
   },

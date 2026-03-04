@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http'; // added HTTP_INTERCEPTORS
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -73,7 +73,6 @@ import {CommonModule} from '@angular/common';
     SharedModule,
     LayoutsModule,
     BackOfficeModule,
-    FrontOfficeModule,
     AppointmentsModule,
     LucideAngularModule.pick({ Heart, Mail, Lock, User }),
     BrowserAnimationsModule,

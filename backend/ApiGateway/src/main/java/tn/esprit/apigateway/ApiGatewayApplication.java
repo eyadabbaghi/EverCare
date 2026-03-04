@@ -58,7 +58,21 @@ public class ApiGatewayApplication {
                         .path("/api/daily-entries/**", "/api/dailyme-alerts/**", "/api/daily-tasks/**", "/api/journal/**", "/api/insights")
                         .filters(f -> f.rewritePath("/EverCare/(?<segment>.*)", "/${segment}"))
                         .uri("lb://DAILYME-SERVICE"))
+
+                // 1. Route pour le WebSocket (doit être définie avant les routes HTTP générales)
+                .route("communication-websocket", r -> r
+                        .path("/ws-chat/**")
+                        .uri("lb://COMMUNICATION-SERVICE"))
+                 .route("communication-service", r -> r
+                                         .path("/communication-service/**")
+                                         .filters(f -> f.rewritePath("/communication-service/(?<segment>.*)", "/${segment}"))
+                                         .uri("lb://COMMUNICATION-SERVICE"))
+
                 .build();
+    }
 
 
-    }}
+
+
+
+}

@@ -22,6 +22,10 @@ const routes: Routes = [
       ),
   },
   {
+    path: 'communication',
+    loadChildren: () => import('./features/communication/communication.module').then(m => m.CommunicationModule)
+  },
+  {
     path: '**',
     redirectTo: '',
   },
