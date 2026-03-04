@@ -1,27 +1,40 @@
 package tn.esprit.activities.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tn.esprit.activities.client.NotificationClient;
+import tn.esprit.activities.client.UserServiceClient;
 import tn.esprit.activities.dto.*;
 import tn.esprit.activities.entity.Activity;
 import tn.esprit.activities.entity.ActivityDetails;
+import tn.esprit.activities.entity.ActivityRecommendation;
 import tn.esprit.activities.entity.UserActivity;
+import tn.esprit.activities.exception.ResourceNotFoundException;
 import tn.esprit.activities.repository.ActivityDetailsRepository;
+import tn.esprit.activities.repository.ActivityRecommendationRepository;
 import tn.esprit.activities.repository.ActivityRepository;
 import tn.esprit.activities.repository.UserActivityRepository;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ActivityService {
 
     private final ActivityRepository activityRepository;
     private final ActivityDetailsRepository detailsRepository;
     private final UserActivityRepository userActivityRepository;
+    private final ActivityRecommendationRepository recommendationRepository;
+    private final UserServiceClient userServiceClient;
+    private final NotificationClient notificationClient;
 
     // ---------- Admin: Activity CRUD ----------
 
@@ -54,6 +67,9 @@ public class ActivityService {
                 .monitoredBy(request.getMonitoredBy())
                 .build();
         activity = activityRepository.save(activity);
+
+        sendNotification(activity.getId(), "CREATED", "Activity '" + activity.getName() + "' was created.");
+
         return mapToDTO(activity);
     }
 
@@ -74,6 +90,9 @@ public class ActivityService {
         if (request.getMonitoredBy() != null) activity.setMonitoredBy(request.getMonitoredBy());
 
         activity = activityRepository.save(activity);
+
+        sendNotification(activity.getId(), "UPDATED", "Activity '" + activity.getName() + "' was updated.");
+
         return mapToDTO(activity);
     }
 
@@ -82,6 +101,8 @@ public class ActivityService {
         Activity activity = activityRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Activity not found"));
         activityRepository.delete(activity);
+
+        sendNotification(activity.getId(), "DELETED", "Activity '" + activity.getName() + "' was deleted.");
     }
 
     // ---------- Admin: ActivityDetails CRUD ----------
@@ -146,9 +167,28 @@ public class ActivityService {
     public List<ActivityWithUserDataDTO> getActivitiesForUser(String userId) {
         List<Activity> activities = activityRepository.findAll();
         List<UserActivity> userActivities = userActivityRepository.findByUserId(userId);
-        return activities.stream()
-                .map(activity -> mapToWithUserData(activity, userActivities))
-                .collect(Collectors.toList());
+        List<ActivityRecommendation> recommendations = recommendationRepository.findByPatientId(userId);
+        Set<String> recommendedIds = recommendations.stream()
+                .map(rec -> rec.getActivity().getId()).collect(Collectors.toSet());
+        Map<String, UserDto> doctorCache = new HashMap<>();
+
+        return activities.stream().map(activity -> {
+            ActivityWithUserDataDTO dto = mapToWithUserData(activity, userActivities);
+            boolean isRecommended = recommendedIds.contains(activity.getId());
+            dto.setRecommendedByDoctor(isRecommended);
+            if (isRecommended) {
+                ActivityRecommendation rec = recommendations.stream()
+                        .filter(r -> r.getActivity().getId().equals(activity.getId()))
+                        .findFirst().orElse(null);
+                if (rec != null) {
+                    UserDto doctor = doctorCache.computeIfAbsent(rec.getDoctorId(),
+                            did -> userServiceClient.getUserById(did));
+                    dto.setDoctorName(doctor.getName());
+                    dto.setDoctorPicture(doctor.getProfilePicture());
+                }
+            }
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     public ActivityWithUserDataDTO getActivityForUser(String userId, String activityId) {
@@ -223,6 +263,21 @@ public class ActivityService {
         return mapToDTO(activity);
     }
 
+    // ---------- Helper: Send notification (with error handling) ----------
+
+    private void sendNotification(String activityId, String action, String details) {
+        try {
+            NotificationRequest request = new NotificationRequest();
+            request.setActivityId(activityId);
+            request.setAction(action);
+            request.setDetails(details);
+            notificationClient.sendNotification(request);
+            log.info("Notification sent: {} - {}", action, activityId);
+        } catch (Exception e) {
+            log.error("Failed to send notification for activity {}: {}", activityId, e.getMessage());
+        }
+    }
+
     // ---------- Mapping ----------
 
     private ActivityDTO mapToDTO(Activity activity) {
@@ -293,7 +348,6 @@ public class ActivityService {
         dto.setStartTime(activity.getStartTime());
         dto.setMonitoredBy(activity.getMonitoredBy());
 
-        // For simplicity, pick the first set of details (or adjust logic)
         if (!activity.getDetails().isEmpty()) {
             ActivityDetails details = activity.getDetails().get(0);
             dto.setInstructions(details.getInstructions());
@@ -315,5 +369,29 @@ public class ActivityService {
             dto.setUserRating(null);
         }
         return dto;
+    }
+
+    public Activity getActivityEntityById(String id) {
+        return activityRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity not found with id: " + id));
+    }
+
+    public List<ActivityDetails> getDetailsEntitiesByActivityId(String activityId) {
+        return detailsRepository.findByActivityId(activityId);
+    }
+
+    @Transactional
+    public void recommendActivity(String doctorId, String patientId, String activityId) {
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new RuntimeException("Activity not found"));
+        ActivityRecommendation rec = ActivityRecommendation.builder()
+                .doctorId(doctorId).patientId(patientId).activity(activity)
+                .recommendedAt(LocalDateTime.now()).build();
+        recommendationRepository.save(rec);
+    }
+
+    public List<ActivityDTO> getRecommendationsForPatient(String patientId) {
+        return recommendationRepository.findByPatientId(patientId).stream()
+                .map(rec -> mapToDTO(rec.getActivity())).collect(Collectors.toList());
     }
 }

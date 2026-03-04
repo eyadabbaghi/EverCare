@@ -11,7 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/consultation-types")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class ConsultationTypeController {
 
     private final ConsultationTypeService consultationTypeService;

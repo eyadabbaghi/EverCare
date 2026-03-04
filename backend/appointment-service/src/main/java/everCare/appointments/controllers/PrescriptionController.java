@@ -13,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/prescriptions")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;

@@ -11,7 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/medical-records/{recordId}/histories")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 public class MedicalHistoryController {
 
     private final MedicalHistoryService historyService;

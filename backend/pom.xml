@@ -33,8 +33,9 @@
         <module>Alerts</module>
         <module>User</module>
         <module>ApiGateway</module>
-        <module>Eureka-service</module>
         <module>communication-service</module>
+        <module>notification-service</module>
+        <module>medical-record-service</module>
 
     </modules>
 
@@ -69,16 +70,21 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.32</version> <!-- Latest stable -->
             <scope>provided</scope>
-
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
-
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

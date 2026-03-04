@@ -1,4 +1,3 @@
-// login.component.ts
 import { Component, NgZone, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
@@ -49,6 +48,7 @@ export class LoginComponent implements OnInit {
     { value: 'PATIENT', label: 'Patient' },
     { value: 'CAREGIVER', label: 'Caregiver' },
     { value: 'DOCTOR', label: 'Doctor' },
+
   ];
 
   constructor(
@@ -89,7 +89,6 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  // Handlers
   onTabChange(tab: 'login' | 'register'): void {
     this.activeTab = tab;
   }
@@ -152,7 +151,6 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  // Called when the user clicks the custom Google button (if you keep it)
   handleGoogleLogin(): void {
     this.toastr.info('Please use the official Google Sign‑In button', 'Info');
   }
@@ -182,7 +180,6 @@ export class LoginComponent implements OnInit {
       /\d/.test(password),
       /[!@#$%^&*()]/.test(password)
     ];
-
     const strengthLevel = checks.filter(Boolean).length;
 
     let message = '';
@@ -208,6 +205,7 @@ export class LoginComponent implements OnInit {
     return 'bg-green-600';
   }
 
+  // Individual check methods for the template
   hasMinLength(): boolean {
     const password = this.registerForm?.get('password')?.value;
     return password && password.length >= 8;

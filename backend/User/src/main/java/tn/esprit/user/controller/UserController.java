@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserService userService;
@@ -140,6 +139,14 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserDto> getUserById(@PathVariable String userId) {
+        UserDto userDto = userService.getUserDtoById(userId);
+        return ResponseEntity.ok(userDto);
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<UserDto>> searchUsers(@RequestParam String q, @RequestParam UserRole role) {
         List<User> users = userService.searchUsersByRole(q, role);
@@ -156,7 +163,7 @@ public class UserController {
     }
 
     // ========== GET CAREGIVERS FOR PATIENT ==========
-    @GetMapping("/{id}/patients")
+    /* @GetMapping("/{id}/patients")
     public ResponseEntity<List<UserDto>> getPatientsByCaregiverId(@PathVariable String id) {
         System.out.println("ID: " + id);
         User caregiver = userService.findById(id);
@@ -170,6 +177,6 @@ public class UserController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(patients);
-    }
+    } */
 
 }

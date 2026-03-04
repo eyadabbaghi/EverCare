@@ -23,7 +23,7 @@ public class ActivityWithUserDataDTO {
     private String startTime;
     private String monitoredBy;
 
-    // ActivityDetails fields (assuming one set per activity; you can adjust if multiple)
+    // ActivityDetails fields
     private List<String> instructions;
     private DifficultyLevel difficulty;
     private List<AlzheimerStage> recommendedStage;
@@ -36,4 +36,9 @@ public class ActivityWithUserDataDTO {
     private boolean completed;
     private boolean favorite;
     private Integer userRating;
+
+    // NEW: indicates this activity was recommended by the user's doctor
+    private boolean recommendedByDoctor;
+    private String doctorName;
+    private String doctorPicture;
 }

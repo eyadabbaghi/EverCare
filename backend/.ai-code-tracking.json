@@ -1,0 +1,88 @@
+{
+  "version": "1.0",
+  "records": [
+    {
+      "filePath": "C:/Users/Administrateur/Desktop/My projects/PiDev/EverCare/backend/User/src/main/java/tn/esprit/user/controller/UserController.java",
+      "timestamp": 1772651909357,
+      "startOffset": 6560,
+      "endOffset": 7153,
+      "codeContent": "    @GetMapping(\"/search\")\n    public ResponseEntity\u003cList\u003cUserDto\u003e\u003e searchUsers(@RequestParam String q, @RequestParam UserRole role) {\n        List\u003cUser\u003e users \u003d userService.searchUsersByRole(q, role);\n        List\u003cUserDto\u003e dtos \u003d users.stream()\n                .map(this::mapToDto)\n                .collect(Collectors.toList());\n        return ResponseEntity.ok(dtos);\n    }\n\n    @GetMapping(\"/by-email\")\n    public ResponseEntity\u003cUserDto\u003e getUserByEmail(@RequestParam String email) {\n        User user \u003d userService.findByEmail(email);\n        return ResponseEntity.ok(mapToDto(user));\n    }",
+      "aiProbability": 95,
+      "aiTool": "GitHub Copilot",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 14
+    },
+    {
+      "filePath": "/ConsultationTypeController.java",
+      "timestamp": 1772653644215,
+      "startOffset": 447,
+      "endOffset": 475,
+      "codeContent": "\n@CrossOrigin(origins \u003d \"*\")",
+      "aiProbability": 90,
+      "aiTool": "GitHub Copilot",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 2
+    },
+    {
+      "filePath": "/MedicalDocumentController.java",
+      "timestamp": 1772654350842,
+      "startOffset": 453,
+      "endOffset": 481,
+      "codeContent": "\n@CrossOrigin(origins \u003d \"*\")",
+      "aiProbability": 90,
+      "aiTool": "GitHub Copilot",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 2
+    },
+    {
+      "filePath": "/MedicalHistoryController.java",
+      "timestamp": 1772654356162,
+      "startOffset": 451,
+      "endOffset": 479,
+      "codeContent": "\n@CrossOrigin(origins \u003d \"*\")",
+      "aiProbability": 90,
+      "aiTool": "GitHub Copilot",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 2
+    },
+    {
+      "filePath": "/MedicalRecordController.java",
+      "timestamp": 1772654359717,
+      "startOffset": 428,
+      "endOffset": 456,
+      "codeContent": "\n@CrossOrigin(origins \u003d \"*\")",
+      "aiProbability": 90,
+      "aiTool": "GitHub Copilot",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 2
+    },
+    {
+      "filePath": "C:/Users/Administrateur/Desktop/My projects/PiDev/EverCare/backend/User/src/main/java/tn/esprit/user/config/WebConfig.java",
+      "timestamp": 1772654762112,
+      "startOffset": 390,
+      "endOffset": 950,
+      "codeContent": "    @Override\n    public void addResourceHandlers(ResourceHandlerRegistry registry) {\n        registry.addResourceHandler(\"/uploads/**\")\n                .addResourceLocations(\"file:uploads/\");\n    }\n\n    @Override\n    public void addCorsMappings(CorsRegistry registry) {\n        registry.addMapping(\"/**\")\n                .allowedOrigins(\"http://localhost:4200\")\n                .allowedMethods(\"GET\", \"POST\", \"PUT\", \"DELETE\", \"PATCH\", \"OPTIONS\")\n                .allowedHeaders(\"*\")\n                .allowCredentials(true)\n                .maxAge(3600);\n    }",
+      "aiProbability": 95,
+      "aiTool": "GitHub Copilot",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 15
+    },
+    {
+      "filePath": "/WebConfig.java",
+      "timestamp": 1772654780948,
+      "startOffset": 752,
+      "endOffset": 836,
+      "codeContent": "\n                .allowedMethods(\"GET\", \"POST\", \"PUT\", \"DELETE\", \"PATCH\", \"OPTIONS\")",
+      "aiProbability": 90,
+      "aiTool": "GitHub Copilot",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 2
+    }
+  ],
+  "toolStats": {
+    "GitHub Copilot": {
+      "usageCount": 7,
+      "totalLines": 39
+    }
+  }
+}

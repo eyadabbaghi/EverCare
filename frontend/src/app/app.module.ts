@@ -1,5 +1,8 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { ReactiveFormsModule } from '@angular/forms';
+
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CoreModule } from './core/core.module';
@@ -18,16 +21,26 @@ import { AppointmentsModule } from './features/appointments/appointments.module'
 import { LucideAngularModule, Heart, Mail, Lock, User, Chrome } from 'lucide-angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ToastrModule } from 'ngx-toastr';
-import {ReactiveFormsModule} from '@angular/forms';
-import {RouterModule} from '@angular/router';
 
 // Import the interceptor
 import { AuthInterceptor } from './features/front-office/pages/login/auth.interceptor';
-import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
-import {CommonModule} from '@angular/common'; // adjust path if needed
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { AddIncidentDialogComponent } from './add-incident-dialog/add-incident-dialog.component';
+import { AddAlertDialogComponent } from './add-alert-dialog/add-alert-dialog.component';
+
+// Angular Material imports
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatRadioModule } from '@angular/material/radio';
+import { IncidentDetailsDialogComponent } from './features/front-office/pages/alerts/incident-details-dialog.component';
+import {RouterModule} from '@angular/router';
+import {CommonModule} from '@angular/common';
 
 @NgModule({
-
   declarations: [
     AppComponent,
     BackOfficeLayoutComponent,
@@ -37,6 +50,10 @@ import {CommonModule} from '@angular/common'; // adjust path if needed
     FrontOfficeLayoutComponent,
     HeaderComponent,
     HeroComponent,
+    AddIncidentDialogComponent,
+    AddAlertDialogComponent,
+    IncidentDetailsDialogComponent, // <-- add here
+
     AppComponent,
     BackOfficeLayoutComponent,
     SidebarComponent,
@@ -50,6 +67,7 @@ import {CommonModule} from '@angular/common'; // adjust path if needed
   imports: [
     BrowserModule,
     AppRoutingModule,
+    MatRadioModule,
     HttpClientModule,
     CoreModule,
     SharedModule,
@@ -67,13 +85,22 @@ import {CommonModule} from '@angular/common'; // adjust path if needed
       closeButton: true
     }),
     ReactiveFormsModule,
+    // Angular Material modules
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatCheckboxModule,
+    ReactiveFormsModule,
     RouterModule,
     CommonModule,
 
   ],
   providers: [
     provideClientHydration(),
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true } // Add this line
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    provideAnimationsAsync('noop')
   ],
   bootstrap: [AppComponent]
 })

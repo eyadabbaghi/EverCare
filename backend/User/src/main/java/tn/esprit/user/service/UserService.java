@@ -72,18 +72,19 @@ public class UserService {
         dto.setWorkplaceName(user.getWorkplaceName());
         dto.setDoctorEmail(user.getDoctorEmail());
 
-        // Relationships – these will now be loaded inside the transaction
+        // Relationships
         if (user.getRole() == UserRole.PATIENT) {
             dto.setCaregiverEmails(user.getCaregivers().stream()
                     .map(User::getEmail).collect(Collectors.toSet()));
         } else if (user.getRole() == UserRole.CAREGIVER) {
             dto.setPatientEmails(user.getPatients().stream()
                     .map(User::getEmail).collect(Collectors.toSet()));
+        } else if (user.getRole() == UserRole.DOCTOR) {
+            List<User> patients = userRepository.findByDoctorEmail(user.getEmail());
+            dto.setPatientEmails(patients.stream().map(User::getEmail).collect(Collectors.toSet()));
         }
-
         return dto;
     }
-
     @Transactional
     public User updateUser(String email, UpdateUserRequest request) {
         User user = findByEmail(email);
@@ -260,8 +261,17 @@ public class UserService {
         return userRepository.searchByRoleAndQuery(query, role);
     }
 
-    public User findById(String id) {
-        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
 
+    // NEW: find by userId
+    public User findByUserId(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    }
+
+    // NEW: get user DTO by ID
+    @Transactional(readOnly = true)
+    public UserDto getUserDtoById(String userId) {
+        User user = findByUserId(userId);
+        return mapToDto(user);
     }
 }

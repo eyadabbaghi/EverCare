@@ -15,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/availabilities")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class AvailabilityController {
 
     private final AvailabilityService availabilityService;

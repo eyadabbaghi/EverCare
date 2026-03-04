@@ -67,16 +67,26 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8096/EverCare/auth';
-  private usersUrl = 'http://localhost:8096/EverCare/users';
+ // private apiUrl = 'http://localhost:8096/EverCare/auth';
+  //private usersUrl = 'http://localhost:8096/EverCare/users';
 
-  // Keycloak configuration – use a public client (no secret) created in Keycloak
+   // New gateway URLs
+ private apiUrl = 'http://localhost:8089/EverCare/auth';
+  private usersUrl = 'http://localhost:8089/EverCare/users';
+
+  // Keycloak configuration – use a public client (no secret) created in Keycloak -islem
+  //private keycloakUrl = 'http://localhost:8180/realms/EverCareRealm/protocol/openid-connect/token';
+  //private clientId = 'frontend-app'; // Replace with your public client ID
+
+  // Keycloak configuration – use a public client (no secret) created in Keycloak - badr
   private keycloakUrl = 'http://localhost:8090/realms/EverCareRealm/protocol/openid-connect/token';
   private clientId = 'frontend-app'; // Replace with your public client ID
+
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -220,4 +230,8 @@ export class AuthService {
     this.toastr.warning('Google login is being migrated. Please use email/password.', 'Not available');
     return of(null);
   }
+
+  getCurrentUserValue(): User | null {
+  return this.currentUserSubject.value;
+}
 }
