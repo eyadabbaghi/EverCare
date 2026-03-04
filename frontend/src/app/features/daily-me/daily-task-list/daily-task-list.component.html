@@ -1,6 +1,42 @@
 <div class="tasks-card">
 
   <!-- ===================================================== -->
+  <!-- ✅ ALERT MODAL -->
+  <!-- ===================================================== -->
+  <div *ngIf="showAlertModal"
+       class="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center px-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-xl border border-gray-200">
+
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-extrabold text-[#2D1B4E]">
+            {{ alertTitle }}
+          </h2>
+          <p class="text-[#6B5B8C] mt-1">
+            {{ alertText }}
+          </p>
+        </div>
+
+        <button type="button"
+                (click)="closeAlert()"
+                class="text-[#6B5B8C] hover:text-[#2D1B4E] text-xl leading-none"
+                aria-label="Close">
+          ✕
+        </button>
+      </div>
+
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button"
+                (click)="closeAlert()"
+                class="px-5 py-2 rounded-2xl border border-gray-200 text-[#2D1B4E] hover:bg-gray-50 font-semibold">
+          OK
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
   <!-- ✅ DOCTOR / CAREGIVER DASHBOARD (READ ONLY) -->
   <!-- ===================================================== -->
   <ng-container *ngIf="isReadOnly; else patientUI">
@@ -44,6 +80,62 @@
         <div class="kpi-value danger">{{ analysisMissedCount }}</div>
         <div class="kpi-hint">Older than 24h</div>
       </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- ✅ ALERTS CARD (Doctor) -->
+    <!-- ===================================================== -->
+    <div class="doc-alerts-card">
+
+      <div class="doc-alerts-head">
+        <div class="doc-alerts-title">🚨 Patient Alerts</div>
+
+        <span class="doc-alerts-badge" *ngIf="dailyMeAlerts.length > 0 && newAlertsCount > 0">
+          {{ newAlertsCount }} NEW
+        </span>
+
+        <span class="doc-alerts-badge muted" *ngIf="dailyMeAlerts.length > 0 && newAlertsCount === 0">
+          No new alerts
+        </span>
+      </div>
+
+      <div class="doc-alert-empty" *ngIf="dailyMeAlerts.length === 0">
+        ✅ No alerts for this patient.
+      </div>
+
+      <div class="doc-alerts-body" *ngIf="dailyMeAlerts.length > 0">
+        <div class="doc-alert-row" *ngFor="let a of dailyMeAlerts">
+
+          <div class="doc-alert-left">
+            <div class="doc-alert-type">
+              {{ a.riskLevel || 'ALERT' }}
+              <span class="doc-alert-status" [class.new]="a.status === 'NEW'">
+                {{ a.status }}
+              </span>
+            </div>
+
+            <div class="doc-alert-msg">
+              {{ a.reason || 'No reason provided' }}
+            </div>
+
+            <div class="doc-alert-time" *ngIf="a.createdAt">
+              {{ a.createdAt | date:'dd MMM yyyy • HH:mm' }}
+            </div>
+          </div>
+
+          <div class="doc-alert-actions">
+            <button
+              type="button"
+              class="doc-alert-btn"
+              *ngIf="a.status === 'NEW'"
+              (click)="resolveAlert(a.id)">
+              Resolve
+            </button>
+          </div>
+
+        </div>
+      </div>
+
     </div>
 
     <!-- CHARTS GRID -->
@@ -190,7 +282,14 @@
 
               <div class="doc-task-sub">
                 <span class="doc-pill">{{ t.taskType }}</span>
-                <span class="doc-time">{{ t.scheduledTime }}</span>
+
+                <span class="doc-time" *ngIf="activeTab === 'ACTIVE'">
+                  {{ t.scheduledTime }}
+                </span>
+
+                <span class="doc-time" *ngIf="activeTab === 'HISTORY'">
+                  {{ (t.archivedAt || t.createdAt) | date:'dd MMM yyyy' }}
+                </span>
 
                 <span
                   *ngIf="activeTab === 'HISTORY'"
@@ -261,7 +360,7 @@
       </button>
     </div>
 
-    <!-- SEARCH + FILTERS (PATIENT) -->
+    <!-- SEARCH + FILTERS -->
     <div class="task-filters">
 
       <input
@@ -279,7 +378,6 @@
         <option value="OTHER">OTHER</option>
       </select>
 
-      <!-- ✅ BACK: DONE / TODO filter -->
       <select class="select" [(ngModel)]="filterStatus">
         <option value="ALL">All</option>
         <option value="TODO">To do</option>
@@ -315,7 +413,6 @@
 
           <div class="meta">
 
-            <!-- ✅ BACK: ICONS by type -->
             <div class="title">
               <span
                 class="ico"
@@ -334,9 +431,15 @@
 
             <div class="sub">
               <span class="pill">{{ t.taskType }}</span>
-              <span class="time">{{ t.scheduledTime }}</span>
 
-              <!-- HISTORY badge -->
+              <span class="time" *ngIf="activeTab === 'ACTIVE'">
+                {{ t.scheduledTime }}
+              </span>
+
+              <span class="time" *ngIf="activeTab === 'HISTORY'">
+                {{ (t.archivedAt || t.createdAt) | date:'dd MMM yyyy' }}
+              </span>
+
               <span
                 *ngIf="activeTab === 'HISTORY'"
                 class="status-badge"
@@ -384,42 +487,105 @@
       +
     </button>
 
-    <!-- MODAL -->
+    <!-- ===================================================== -->
+    <!-- ✅ MODAL (UPDATED WITH CONTROL DE SAISIE) -->
+    <!-- ===================================================== -->
     <div class="modal-backdrop" *ngIf="isModalOpen">
       <div class="modal">
 
         <h3>{{ isEditing ? 'Edit Task' : 'Add Task' }}</h3>
 
-        <label>Title</label>
-        <input [(ngModel)]="currentTask.title" placeholder="e.g. Drink water" />
+        <form #taskForm="ngForm" (ngSubmit)="save(taskForm)" novalidate>
 
-        <label>Task Type</label>
-        <select [(ngModel)]="currentTask.taskType">
-          <option value="MEDICATION">MEDICATION</option>
-          <option value="MEAL">MEAL</option>
-          <option value="EXERCISE">EXERCISE</option>
-          <option value="APPOINTMENT">APPOINTMENT</option>
-          <option value="SOCIAL">SOCIAL</option>
-          <option value="OTHER">OTHER</option>
-        </select>
+          <!-- TITLE -->
+          <label>Title</label>
+          <input
+            name="title"
+            [(ngModel)]="currentTask.title"
+            #titleCtrl="ngModel"
+            required
+            minlength="3"
+            maxlength="255"
+            placeholder="e.g. Drink water"
+            [class.invalid]="titleCtrl.invalid && (titleCtrl.dirty || titleCtrl.touched)"
+          />
+          <div class="field-error" *ngIf="titleCtrl.invalid && (titleCtrl.dirty || titleCtrl.touched)">
+            <div *ngIf="titleCtrl.errors?.['required']">Title is required.</div>
+            <div *ngIf="titleCtrl.errors?.['minlength']">Title must be at least 3 characters.</div>
+            <div *ngIf="titleCtrl.errors?.['maxlength']">Title cannot exceed 255 characters.</div>
+          </div>
 
-        <label>Scheduled Time</label>
-        <input type="time" [(ngModel)]="currentTask.scheduledTime" />
+          <!-- TYPE -->
+          <label>Task Type</label>
+          <select
+            name="taskType"
+            [(ngModel)]="currentTask.taskType"
+            #typeCtrl="ngModel"
+            required
+            [class.invalid]="typeCtrl.invalid && (typeCtrl.dirty || typeCtrl.touched)"
+          >
+            <option value="" disabled>Select type...</option>
+            <option value="MEDICATION">MEDICATION</option>
+            <option value="MEAL">MEAL</option>
+            <option value="EXERCISE">EXERCISE</option>
+            <option value="APPOINTMENT">APPOINTMENT</option>
+            <option value="SOCIAL">SOCIAL</option>
+            <option value="OTHER">OTHER</option>
+          </select>
+          <div class="field-error" *ngIf="typeCtrl.invalid && (typeCtrl.dirty || typeCtrl.touched)">
+            Task type is required.
+          </div>
 
-        <label>Notes</label>
-        <textarea rows="3" [(ngModel)]="currentTask.notes"></textarea>
+          <!-- TIME -->
+          <label>Scheduled Time</label>
+          <input
+            type="time"
+            name="scheduledTime"
+            [(ngModel)]="currentTask.scheduledTime"
+            #timeCtrl="ngModel"
+            required
+            [class.invalid]="timeCtrl.invalid && (timeCtrl.dirty || timeCtrl.touched)"
+          />
+          <div class="field-error" *ngIf="timeCtrl.invalid && (timeCtrl.dirty || timeCtrl.touched)">
+            Scheduled time is required.
+          </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn" (click)="closeModal()">Cancel</button>
-          <button type="button" class="btn primary" (click)="save()">Save</button>
-        </div>
+          <!-- NOTES -->
+          <label>Notes</label>
+          <textarea
+            rows="3"
+            name="notes"
+            [(ngModel)]="currentTask.notes"
+            #notesCtrl="ngModel"
+            maxlength="500"
+            [class.invalid]="notesCtrl.invalid && (notesCtrl.dirty || notesCtrl.touched)"
+          ></textarea>
+          <div class="field-hint" *ngIf="(currentTask.notes || '').length > 0">
+  {{ (currentTask.notes || '').length }}
+</div>
+          <div class="field-error" *ngIf="notesCtrl.errors?.['maxlength'] && (notesCtrl.dirty || notesCtrl.touched)">
+            Notes cannot exceed 500 characters.
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn" (click)="closeModal()">Cancel</button>
+
+            <button
+              type="submit"
+              class="btn primary"
+              [disabled]="taskForm.invalid"
+              [class.disabled]="taskForm.invalid"
+            >
+              Save
+            </button>
+          </div>
+
+        </form>
 
       </div>
     </div>
 
-    <!-- ===================================================== -->
-    <!-- ✅ SMART INSIGHTS (UNDER CRUD) -->
-    <!-- ===================================================== -->
+    <!-- SMART INSIGHTS -->
     <div class="patient-smart">
 
       <div class="smart-card score" [ngClass]="patientAdherenceClass">

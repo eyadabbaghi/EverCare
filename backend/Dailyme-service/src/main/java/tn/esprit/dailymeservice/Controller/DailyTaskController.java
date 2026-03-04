@@ -74,4 +74,12 @@ public class DailyTaskController {
         dailyTaskService.deleteTask(id);
         return ResponseEntity.ok("Task deleted successfully");
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTaskById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(dailyTaskService.getTaskById(id));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not found: " + id);
+        }
+    }
 }

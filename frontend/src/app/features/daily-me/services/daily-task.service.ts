@@ -1,21 +1,36 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { DailyTask } from '../models/daily-task.model';
 import { Observable } from 'rxjs';
+
+import { DailyTask } from '../models/daily-task.model';
+import { PatientDashboardInsightsDTO } from '../models/patient-dashboard-insights';
+
+// ✅ your alert model is in src/app/models/
+import { DailyMeAlert } from '../../../models/dailyme-alert';
 
 @Injectable({ providedIn: 'root' })
 export class DailyTaskService {
-  private baseUrl = 'http://localhost:8098/dailyme/api/daily-tasks';
+
+  // ✅ Gateway / dailyme routes (keep consistent)
+  private tasksUrl = 'http://localhost:8098/dailyme/api/daily-tasks';
+  private insightsUrl = 'http://localhost:8098/dailyme/api/insights';
+
+  // ✅ Alerts endpoint (same gateway)
+  private alertsUrl = 'http://localhost:8098/dailyme/api/dailyme-alerts';
 
   constructor(private http: HttpClient) {}
+
+  // =========================
+  // ✅ TASKS CRUD
+  // =========================
 
   // ✅ ACTIVE tasks
   getTasksByPatient(patientId: string): Observable<DailyTask[]> {
     return this.http.get<DailyTask[]>(
-      `${this.baseUrl}/patient/${patientId}`,
+      `${this.tasksUrl}/patient/${patientId}`,
       {
         headers: { 'Cache-Control': 'no-cache' },
-        params: { _: Date.now().toString() } // anti-cache
+        params: { _: Date.now().toString() }
       }
     );
   }
@@ -23,36 +38,82 @@ export class DailyTaskService {
   // ✅ HISTORY tasks
   getHistoryByPatient(patientId: string): Observable<DailyTask[]> {
     return this.http.get<DailyTask[]>(
-      `${this.baseUrl}/patient/${patientId}/history`,
+      `${this.tasksUrl}/patient/${patientId}/history`,
       {
         headers: { 'Cache-Control': 'no-cache' },
-        params: { _: Date.now().toString() } // anti-cache
+        params: { _: Date.now().toString() }
       }
     );
   }
 
+  // ✅ INSIGHTS
+  getPatientDashboardInsights(patientId: string): Observable<PatientDashboardInsightsDTO> {
+    return this.http.get<PatientDashboardInsightsDTO>(
+      `${this.insightsUrl}/patient/${patientId}/dashboard`,
+      {
+        headers: { 'Cache-Control': 'no-cache' },
+        params: { _: Date.now().toString() }
+      }
+    );
+  }
+
+  // ✅ CREATE
   addTask(task: DailyTask): Observable<DailyTask> {
     const payload = this.fixPayload(task);
-    console.log('SERVICE PAYLOAD JSON:', JSON.stringify(payload, null, 2));
-    return this.http.post<DailyTask>(this.baseUrl, payload);
+    return this.http.post<DailyTask>(this.tasksUrl, payload);
   }
 
+  // ✅ UPDATE
   updateTask(task: DailyTask): Observable<DailyTask> {
     const payload = this.fixPayload(task);
-    return this.http.put<DailyTask>(`${this.baseUrl}/${task.id}`, payload);
+    return this.http.put<DailyTask>(`${this.tasksUrl}/${task.id}`, payload);
   }
 
+  // ✅ DELETE
   deleteTask(id: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/${id}`, {
-      responseType: 'text'
-    });
+    return this.http.delete(`${this.tasksUrl}/${id}`, { responseType: 'text' });
   }
 
+  // ✅ PATCH completed
   setCompleted(id: number, completed: boolean): Observable<DailyTask> {
-    return this.http.patch<DailyTask>(`${this.baseUrl}/${id}/completed`, { completed });
+    return this.http.patch<DailyTask>(`${this.tasksUrl}/${id}/completed`, { completed });
   }
 
-  // ---- helpers ----
+  // =========================
+  // ✅ ALERTS (DailyMe innovation)
+  // =========================
+
+  getDailyMeAlertsByPatient(patientId: string): Observable<DailyMeAlert[]> {
+    return this.http.get<DailyMeAlert[]>(
+      `${this.alertsUrl}/patient/${patientId}`,
+      {
+        headers: { 'Cache-Control': 'no-cache' },
+        params: { _: Date.now().toString() }
+      }
+    );
+  }
+
+  getNewDailyMeAlerts(): Observable<DailyMeAlert[]> {
+    return this.http.get<DailyMeAlert[]>(
+      `${this.alertsUrl}/new`,
+      {
+        headers: { 'Cache-Control': 'no-cache' },
+        params: { _: Date.now().toString() }
+      }
+    );
+  }
+
+  resolveDailyMeAlert(id: number): Observable<DailyMeAlert> {
+    return this.http.patch<DailyMeAlert>(
+      `${this.alertsUrl}/${id}/status`,
+      { status: 'RESOLVED' }
+    );
+  }
+
+  // =========================
+  // ✅ HELPERS
+  // =========================
+
   private fixPayload(task: DailyTask): DailyTask {
     return {
       ...task,

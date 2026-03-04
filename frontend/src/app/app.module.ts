@@ -37,6 +37,8 @@ import { AuthInterceptor } from './features/front-office/pages/login/auth.interc
 // ✅ ng2-charts v6 setup
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { TrackingModule } from './features/tracking/tracking.module';
+import { DailymeAlertsComponent } from './pages/dailyme-alerts/dailyme-alerts.component';
+import { DailymeAlertCardComponent } from './components/dailyme-alert-card/dailyme-alert-card.component';
 
 @NgModule({
   declarations: [
@@ -47,7 +49,9 @@ import { TrackingModule } from './features/tracking/tracking.module';
     FooterComponent,
     FrontOfficeLayoutComponent,
     HeaderComponent,
-    HeroComponent
+    HeroComponent,
+    DailymeAlertsComponent,
+    DailymeAlertCardComponent
   ],
   imports: [
     BrowserModule,

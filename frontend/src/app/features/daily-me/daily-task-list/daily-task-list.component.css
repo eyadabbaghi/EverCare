@@ -638,3 +638,242 @@
 /* Charts spacing (no Tailwind required) */
 .h-\[220px\]{ height: 220px; }
 .mt-3{ margin-top: 12px; }
+/* ============================= */
+/* ✅ Doctor Alerts Card         */
+/* ============================= */
+
+.doc-alerts-card{
+  background:#fff;
+  border:1px solid #e7e3f4;
+  border-radius:18px;
+  padding:16px;
+  margin:14px 0 18px;
+  box-shadow:0 8px 18px rgba(30, 10, 60, 0.05);
+}
+
+.doc-alerts-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.doc-alerts-title{
+  font-weight:800;
+  font-size:16px;
+  color:#2D1B4E;
+}
+
+.doc-alerts-badge{
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  background:#ffe7e7;
+  color:#b42318;
+  border:1px solid #ffd0d0;
+}
+
+.doc-alerts-badge.muted{
+  background:#f3f0fb;
+  border:1px solid #e7e3f4;
+  color:#6B5B8C;
+}
+
+.doc-alert-empty{
+  padding:12px;
+  border-radius:14px;
+  background:#f7f5ff;
+  border:1px dashed #ded7f3;
+  color:#6B5B8C;
+  font-weight:600;
+}
+
+.doc-alert-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid #efeafc;
+  background:#ffffff;
+  margin-top:10px;
+}
+
+.doc-alert-type{
+  font-weight:800;
+  color:#2D1B4E;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.doc-alert-status{
+  font-size:11px;
+  font-weight:900;
+  padding:3px 8px;
+  border-radius:999px;
+  background:#f3f0fb;
+  color:#6B5B8C;
+  border:1px solid #e7e3f4;
+}
+
+.doc-alert-status.new{
+  background:#fff4e5;
+  color:#b54708;
+  border:1px solid #ffe0b3;
+}
+
+.doc-alert-msg{
+  margin-top:6px;
+  color:#4a3a67;
+  font-weight:600;
+}
+
+.doc-alert-time{
+  margin-top:6px;
+  font-size:12px;
+  color:#8a7aa8;
+}
+
+.doc-alert-btn{
+  border:none;
+  padding:10px 14px;
+  border-radius:12px;
+  background:#2D1B4E;
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.doc-alert-btn:hover{
+  opacity:0.9;
+}
+/* -------- Modal layout -------- */
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9999;
+}
+
+.modal{
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: 24px;
+  padding: 22px;
+  border: 1px solid #eee;
+  box-shadow: 0 20px 60px rgba(0,0,0,.12);
+}
+
+.modal h3{
+  margin: 0 0 14px 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #2D1B4E;
+}
+
+/* -------- Form fields -------- */
+.modal label{
+  display: block;
+  margin: 12px 0 6px;
+  font-weight: 700;
+  color: #6B5B8C;
+  font-size: 14px;
+}
+
+.modal input,
+.modal select,
+.modal textarea{
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid #E7E2F3;
+  background: #fff;
+  padding: 12px 14px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  color: #2D1B4E;
+}
+
+.modal textarea{
+  resize: vertical;
+  min-height: 92px;
+}
+
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus{
+  border-color: #B9A7F0;
+  box-shadow: 0 0 0 4px rgba(185,167,240,.25);
+}
+
+/* invalid state (you already use [class.invalid]) */
+.invalid{
+  border-color: #FCA5A5 !important;
+  box-shadow: 0 0 0 4px rgba(252,165,165,.22) !important;
+}
+
+/* -------- Errors / hints -------- */
+.field-error{
+  margin-top: 6px;
+  font-size: 13px;
+  color: #DC2626;
+  font-weight: 600;
+}
+
+.field-hint{
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6B5B8C;
+}
+
+/* -------- Buttons -------- */
+.modal-actions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.btn{
+  border: 1px solid #E7E2F3;
+  background: #fff;
+  color: #2D1B4E;
+  font-weight: 800;
+  padding: 10px 16px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform .05s ease, background .15s ease, opacity .15s ease;
+}
+
+.btn:hover{
+  background: #F7F4FF;
+}
+
+.btn:active{
+  transform: scale(.98);
+}
+
+.btn.primary{
+  border: none;
+  background: #6D28D9;
+  color: #fff;
+}
+
+.btn.primary:hover{
+  background: #5B21B6;
+}
+
+.btn.primary.disabled,
+.btn.primary:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}

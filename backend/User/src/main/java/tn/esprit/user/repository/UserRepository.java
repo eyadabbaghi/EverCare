@@ -12,6 +12,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
 
-    // ✅ correct: ENUM type
+
     List<User> findByRole(UserRole role);
 }

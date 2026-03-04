@@ -4,7 +4,13 @@ export interface DailyTask {
   title: string;
   taskType: string;
   scheduledTime: string;
-  taskDate?: string;     // ✅ add this
   notes?: string;
-  completed?: boolean;
+  completed: boolean;
+
+  // ✅ new from backend
+  archived?: boolean;
+  archivedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  completedAt?: string;
 }
