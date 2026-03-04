@@ -201,15 +201,15 @@ export class ActivitiesAdminComponent implements OnInit {
     });
 
     this.instructions.clear();
-    activity.instructions.forEach(instr => 
+    activity.instructions.forEach(instr =>
       this.instructions.push(this.fb.group({ value: [instr] }))
     );
     this.benefits.clear();
-    activity.benefits.forEach(ben => 
+    activity.benefits.forEach(ben =>
       this.benefits.push(this.fb.group({ value: [ben] }))
     );
     this.precautions.clear();
-    (activity.precautions || []).forEach(pre => 
+    (activity.precautions || []).forEach(pre =>
       this.precautions.push(this.fb.group({ value: [pre] }))
     );
 
@@ -536,19 +536,19 @@ export class ActivitiesAdminComponent implements OnInit {
 
       // Rebuild instructions array with FormGroup { value: [...] } no validator
       this.instructions.clear();
-      combined.instructions.forEach(instr => 
+      combined.instructions.forEach(instr =>
         this.instructions.push(this.fb.group({ value: [instr] }))
       );
 
       // Rebuild benefits array with FormGroup
       this.benefits.clear();
-      combined.benefits.forEach(ben => 
+      combined.benefits.forEach(ben =>
         this.benefits.push(this.fb.group({ value: [ben] }))
       );
 
       // Rebuild precautions array with FormGroup
       this.precautions.clear();
-      (combined.precautions || []).forEach(pre => 
+      (combined.precautions || []).forEach(pre =>
         this.precautions.push(this.fb.group({ value: [pre] }))
       );
     }

@@ -56,9 +56,3 @@ public class ApiGatewayApplication {
                         .uri("lb://MEDICAL-RECORD-SERVICE"))
                 .build();
     }
-
-
-
-
-
-}
