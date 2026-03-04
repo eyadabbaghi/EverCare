@@ -35,28 +35,6 @@ public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
 
-    // --- RÉCUPÉRATION DES UTILISATEURS POUR LE CHAT ---
-
-    @GetMapping("/all")
-    public ResponseEntity<List<UserDto>> getAllUsers() {
-        // Récupère tous les utilisateurs via le service
-        List<User> users = userService.getAllUsers();
-        List<UserDto> dtos = users.stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
-    }
-
-    @GetMapping("/{userId}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable String userId) {
-        // Utilisation du repository au cas où le service cause une erreur de type
-        return userRepository.findById(userId)
-                .map(user -> ResponseEntity.ok(mapToDto(user)))
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // --- GESTION DU PROFIL ---
-
     @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody UpdateUserRequest request,
                                            @AuthenticationPrincipal UserDetails userDetails) {
@@ -124,7 +102,10 @@ public class UserController {
                                                   @AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
         User user = userService.findByEmail(email);
-        if (file.isEmpty()) return ResponseEntity.badRequest().body("File is empty");
+
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
 
         try {
             String uploadDir = "uploads/profile-pictures/";
@@ -144,6 +125,7 @@ public class UserController {
 
             return ResponseEntity.ok(Map.of("profilePicture", fileUrl));
         } catch (IOException e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload file");
         }
     }

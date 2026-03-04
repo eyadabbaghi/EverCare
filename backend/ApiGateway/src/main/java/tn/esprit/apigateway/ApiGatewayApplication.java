@@ -18,6 +18,12 @@ public class ApiGatewayApplication {
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
+
+                // 1. Route pour le WebSocket (doit être définie avant les routes HTTP générales)
+                .route("communication-websocket", r -> r
+                        .path("/ws-chat/**")
+                        .uri("lb://COMMUNICATION-SERVICE"))
+
                 .route("activities-service", r -> r
                         .path(
                                 "/EverCare/activities/**",
@@ -37,6 +43,10 @@ public class ApiGatewayApplication {
                 .route("appointment-service", r -> r
                         .path("/api/appointments/**")
                         .uri("lb://APPOINTMENT-SERVICE"))
+                .route("communication-service", r -> r
+                        .path("/communication-service/**")
+                        .filters(f -> f.rewritePath("/communication-service/(?<segment>.*)", "/${segment}"))
+                        .uri("lb://COMMUNICATION-SERVICE"))
                 .build();
     }
 }
